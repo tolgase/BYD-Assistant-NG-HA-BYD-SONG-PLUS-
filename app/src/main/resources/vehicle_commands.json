@@ -22,7 +22,8 @@
         "on": 1,
         "off": 0
       }
-    }
+    },
+    "stateFeatureId": 1077936144
   },
   {
     "id": "ac.temperature",
@@ -46,7 +47,8 @@
       "min": 17,
       "max": 33,
       "unit": "°C"
-    }
+    },
+    "stateFeatureId": 1077936168
   },
   {
     "id": "ac.fan",
@@ -69,7 +71,8 @@
       "type": "range",
       "min": 0,
       "max": 7
-    }
+    },
+    "stateFeatureId": 1077936156
   },
   {
     "id": "ac.windMode",
@@ -97,7 +100,8 @@
         "feetAndDefrost": 4,
         "defrost": 5
       }
-    }
+    },
+    "stateFeatureId": 1077936152
   },
   {
     "id": "window.driver",
@@ -386,30 +390,6 @@
     "stateFeatureId": 1263534098
   },
   {
-    "id": "audio.headrestSound",
-    "domain": "AUDIO",
-    "displayName": "Devialet Headrest Sound of the driver's headrest speaker: off, surround (car speakers plus headrest), interactive (calls and navigation in the headrest) or exclusive (music in the headrest only)",
-    "label": "Headrest sound",
-    "labelAr": "صوت مسند الرأس",
-    "labelRu": "Звук в подголовнике",
-    "labelPl": "Dźwięk w zagłówku",
-    "deviceType": 1002,
-    "featureId": -1676672971,
-    "invocation": {
-      "type": "genericFeatureSet"
-    },
-    "parameter": {
-      "type": "fixedEnum",
-      "options": {
-        "off": 1,
-        "surround": 2,
-        "interactive": 3,
-        "exclusive": 4
-      }
-    },
-    "stateFeatureId": 1253048341
-  },
-  {
     "id": "audio.soundStyle",
     "domain": "AUDIO",
     "displayName": "Devialet Sound Features, the sound style of the car speakers: fidelity, soft, dynamic, heavy, speech or custom",
@@ -507,118 +487,64 @@
     "stateFeatureId": 1081081884
   },
   {
-    "id": "mirrors.tiltInReverse",
-    "domain": "SETTING",
-    "displayName": "Tilt the side mirrors down when reversing (setting)",
-    "label": "Mirror tilt in reverse",
-    "labelAr": "إمالة المرايا عند الرجوع",
-    "labelRu": "Наклон зеркал при заднем ходе",
-    "labelPl": "Pochylanie lusterek na biegu wstecznym",
-    "deviceType": 1023,
-    "featureId": 1312817180,
-    "invocation": {
-      "type": "genericFeatureSet"
-    },
-    "parameter": {
-      "type": "fixedEnum",
-      "options": {
-        "off": 0,
-        "on": 1
-      }
-    },
-    "stateFeatureId": 1228931096,
-    "overrides": [
-      {
-        "whenValue": 0,
-        "featureId": 1312817180,
-        "sendValue": 2
-      }
-    ]
-  },
-  {
     "id": "ambient.color",
     "domain": "SETTING",
-    "displayName": "Ambient light colour for the whole cabin. If the lights keep changing colour by themselves, switch the dynamic setting off first",
+    "displayName": "Ambient light colour of the whole cabin",
     "label": "Ambient colour",
     "labelAr": "لون الإضاءة المحيطة",
     "labelRu": "Цвет подсветки салона",
     "labelPl": "Kolor oświetlenia nastrojowego",
     "deviceType": 1023,
     "invocation": {
-      "type": "namedMethod",
-      "deviceClass": "setting",
-      "methodName": "setIALColor",
-      "paramTypes": [
-        "int",
-        "int",
-        "int"
-      ],
-      "argsTemplate": [
-        3,
-        null,
-        1
-      ]
+      "type": "genericFeatureSet"
     },
     "parameter": {
       "type": "fixedEnum",
       "options": {
-        "pink": 4,
-        "magenta": 4,
-        "purple": 8,
-        "dark_blue": 12,
-        "blue": 16,
-        "sky_blue": 24,
-        "cyan": 32,
-        "mint": 48,
-        "light_green": 52,
-        "green": 56,
-        "lime": 64,
-        "yellow": 80,
-        "gold": 84,
-        "amber": 88,
-        "orange": 92,
-        "deep_orange": 96,
-        "red": 104,
-        "crimson": 108,
-        "coral": 112,
-        "warm_white": 116,
-        "cold_white": 124,
-        "ice_blue": 127
+        "pink": 1,
+        "purple": 2,
+        "dark_blue": 3,
+        "blue": 4,
+        "sky_blue": 6,
+        "cyan": 8,
+        "mint": 12,
+        "light_green": 13,
+        "green": 14,
+        "lime": 16,
+        "yellow": 20,
+        "gold": 21,
+        "amber": 22,
+        "orange": 23,
+        "deep_orange": 24,
+        "red": 26,
+        "crimson": 27,
+        "coral": 28,
+        "warm_white": 29,
+        "cold_white": 31
       }
     },
-    "stateFeatureId": 1121976336
+    "stateFeatureId": 1121976336,
+    "featureId": 1069547528
   },
   {
     "id": "ambient.brightness",
     "domain": "SETTING",
-    "displayName": "Ambient light brightness for the whole cabin, 1 (dimmest) to 6 (brightest)",
+    "displayName": "Ambient light brightness, as the car's own raw level (the car showed 6); 1 (dimmest) to 10",
     "label": "Ambient brightness",
     "labelAr": "سطوع الإضاءة المحيطة",
     "labelRu": "Яркость подсветки салона",
     "labelPl": "Jasność oświetlenia nastrojowego",
     "deviceType": 1023,
     "invocation": {
-      "type": "namedMethod",
-      "deviceClass": "setting",
-      "methodName": "setIALBrightness",
-      "paramTypes": [
-        "int",
-        "int",
-        "int"
-      ],
-      "argsTemplate": [
-        3,
-        null,
-        1
-      ]
+      "type": "genericFeatureSet"
     },
     "parameter": {
       "type": "range",
       "min": 1,
-      "max": 6
+      "max": 10
     },
-    "valueOffset": -1,
-    "stateFeatureId": 1121976328
+    "stateFeatureId": 1121976328,
+    "featureId": 1069547536
   },
   {
     "id": "ambient.dynamic",
@@ -641,56 +567,6 @@
       }
     },
     "stateFeatureId": 679477578
-  },
-  {
-    "id": "fridge.mode",
-    "domain": "SETTING",
-    "displayName": "Fridge mode: off, cooling or heating",
-    "label": "Fridge",
-    "labelAr": "الثلاجة",
-    "labelRu": "Холодильник",
-    "labelPl": "Lodówka",
-    "deviceType": 1023,
-    "featureId": 850427920,
-    "invocation": {
-      "type": "genericFeatureSet"
-    },
-    "parameter": {
-      "type": "fixedEnum",
-      "options": {
-        "off": 3,
-        "cool": 1,
-        "heat": 2
-      }
-    },
-    "stateFeatureId": 1220542488
-  },
-  {
-    "id": "fridge.cool.temperature",
-    "domain": "SETTING",
-    "displayName": "Fridge cooling temperature (only while the fridge is cooling; switch it to cooling first)",
-    "label": "Fridge cooling temperature",
-    "labelAr": "درجة تبريد الثلاجة",
-    "labelRu": "Охлаждение холодильника",
-    "labelPl": "Chłodzenie lodówki",
-    "deviceType": 1023,
-    "featureId": 850427928,
-    "invocation": {
-      "type": "genericFeatureSet"
-    },
-    "parameter": {
-      "type": "range",
-      "min": -6,
-      "max": 6,
-      "unit": "°C"
-    },
-    "stateFeatureId": 1220542480,
-    "valueOffset": 19,
-    "requires": {
-      "featureId": 1220542488,
-      "equals": 1,
-      "message": "The fridge isn't cooling. Switch it to cooling mode first."
-    }
   },
   {
     "id": "seat.driver.heating",
@@ -785,98 +661,6 @@
     "stateFeatureId": 1335885840
   },
   {
-    "id": "seat.rearLeft.heating",
-    "domain": "SETTING",
-    "displayName": "Rear-left seat heating",
-    "label": "Rear-left seat heating",
-    "labelAr": "تدفئة المقعد الخلفي الأيسر",
-    "labelRu": "Подогрев заднего левого сиденья",
-    "labelPl": "Podgrzewanie tylnego lewego fotela",
-    "deviceType": 1023,
-    "featureId": 1125122091,
-    "invocation": {
-      "type": "genericFeatureSet"
-    },
-    "parameter": {
-      "type": "fixedEnum",
-      "options": {
-        "off": 1,
-        "low": 2,
-        "high": 3
-      }
-    },
-    "stateFeatureId": 1214251019
-  },
-  {
-    "id": "seat.rearLeft.ventilation",
-    "domain": "SETTING",
-    "displayName": "Rear-left seat ventilation",
-    "label": "Rear-left seat ventilation",
-    "labelAr": "تهوية المقعد الخلفي الأيسر",
-    "labelRu": "Вентиляция заднего левого сиденья",
-    "labelPl": "Wentylacja tylnego lewego fotela",
-    "deviceType": 1023,
-    "featureId": 1125122088,
-    "invocation": {
-      "type": "genericFeatureSet"
-    },
-    "parameter": {
-      "type": "fixedEnum",
-      "options": {
-        "off": 1,
-        "low": 2,
-        "high": 3
-      }
-    },
-    "stateFeatureId": 1214251016
-  },
-  {
-    "id": "seat.rearRight.heating",
-    "domain": "SETTING",
-    "displayName": "Rear-right seat heating",
-    "label": "Rear-right seat heating",
-    "labelAr": "تدفئة المقعد الخلفي الأيمن",
-    "labelRu": "Подогрев заднего правого сиденья",
-    "labelPl": "Podgrzewanie tylnego prawego fotela",
-    "deviceType": 1023,
-    "featureId": 1125122099,
-    "invocation": {
-      "type": "genericFeatureSet"
-    },
-    "parameter": {
-      "type": "fixedEnum",
-      "options": {
-        "off": 1,
-        "low": 2,
-        "high": 3
-      }
-    },
-    "stateFeatureId": 1214251027
-  },
-  {
-    "id": "seat.rearRight.ventilation",
-    "domain": "SETTING",
-    "displayName": "Rear-right seat ventilation",
-    "label": "Rear-right seat ventilation",
-    "labelAr": "تهوية المقعد الخلفي الأيمن",
-    "labelRu": "Вентиляция заднего правого сиденья",
-    "labelPl": "Wentylacja tylnego prawego fotela",
-    "deviceType": 1023,
-    "featureId": 1125122096,
-    "invocation": {
-      "type": "genericFeatureSet"
-    },
-    "parameter": {
-      "type": "fixedEnum",
-      "options": {
-        "off": 1,
-        "low": 2,
-        "high": 3
-      }
-    },
-    "stateFeatureId": 1214251024
-  },
-  {
     "id": "steeringWheel.heating",
     "domain": "SETTING",
     "displayName": "Steering wheel heating",
@@ -897,32 +681,6 @@
       }
     },
     "stateFeatureId": 1116733454
-  },
-  {
-    "id": "fridge.heat.temperature",
-    "domain": "SETTING",
-    "displayName": "Fridge heating temperature (only while the fridge is heating; switch it to heating first)",
-    "label": "Fridge heating temperature",
-    "labelAr": "درجة تسخين الثلاجة",
-    "labelRu": "Нагрев холодильника",
-    "labelPl": "Podgrzewanie lodówki",
-    "deviceType": 1023,
-    "featureId": 850427928,
-    "invocation": {
-      "type": "genericFeatureSet"
-    },
-    "parameter": {
-      "type": "range",
-      "min": 35,
-      "max": 50,
-      "unit": "°C"
-    },
-    "stateFeatureId": 1220542480,
-    "requires": {
-      "featureId": 1220542488,
-      "equals": 2,
-      "message": "The fridge isn't heating. Switch it to heating mode first."
-    }
   },
   {
     "id": "dashcam.record",
@@ -1337,7 +1095,7 @@
     "labelRu": "Источник воздуха",
     "labelPl": "Źródło powietrza",
     "deviceType": 1000,
-    "featureId": 1077936148,
+    "featureId": 501219355,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1351,7 +1109,8 @@
         "outside": 0,
         "inside": 1
       }
-    }
+    },
+    "stateFeatureId": 1077936148
   },
   {
     "id": "ac.ventilation",
@@ -1362,7 +1121,7 @@
     "labelRu": "Вентиляция кондиционера",
     "labelPl": "Wentylacja klimatyzacji",
     "deviceType": 1000,
-    "featureId": 1314914314,
+    "featureId": 501219394,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1376,7 +1135,8 @@
         "on": 1,
         "off": 0
       }
-    }
+    },
+    "stateFeatureId": 1314914314
   },
   {
     "id": "ac.compressor",
@@ -1387,7 +1147,7 @@
     "labelRu": "Охлаждение кондиционера",
     "labelPl": "Chłodzenie klimatyzacji",
     "deviceType": 1000,
-    "featureId": 1077936137,
+    "featureId": 501219344,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1401,7 +1161,8 @@
         "on": 1,
         "off": 0
       }
-    }
+    },
+    "stateFeatureId": 1077936137
   },
   {
     "id": "ac.auto",
@@ -1412,7 +1173,7 @@
     "labelRu": "Автоматический режим климата",
     "labelPl": "Tryb automatyczny klimatyzacji",
     "deviceType": 1000,
-    "featureId": 1077936146,
+    "featureId": 501219352,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1425,7 +1186,8 @@
       "options": {
         "auto": 0
       }
-    }
+    },
+    "stateFeatureId": 1077936146
   },
   {
     "id": "ac.frontDefrost",
@@ -1436,7 +1198,7 @@
     "labelRu": "Обогрев лобового стекла",
     "labelPl": "Odmrażanie szyby przedniej",
     "deviceType": 1000,
-    "featureId": 1077936150,
+    "featureId": 501219362,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1450,7 +1212,8 @@
         "on": 1,
         "off": 0
       }
-    }
+    },
+    "stateFeatureId": 1077936150
   },
   {
     "id": "ac.rearDefrost",
@@ -1461,7 +1224,7 @@
     "labelRu": "Обогрев заднего стекла",
     "labelPl": "Odmrażanie szyby tylnej",
     "deviceType": 1000,
-    "featureId": 1128267825,
+    "featureId": 501219357,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1475,6 +1238,7 @@
         "on": 1,
         "off": 0
       }
-    }
+    },
+    "stateFeatureId": 1128267825
   }
 ]

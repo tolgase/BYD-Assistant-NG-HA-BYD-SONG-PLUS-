@@ -18,7 +18,7 @@ val sourceUrl: String = if (updateRepo.isBlank()) "" else "https://github.com/$u
 
 // The version of the next release: raise it (major.minor.patch, each 0-99) before publishing a new stable build.
 // Betas of that version are numbered automatically (1.1.0-beta.1, 1.1.0-beta.2, ...) and sort below it.
-val appVersionName = "1.2.0"
+val appVersionName = "1.4.0"
 
 // versionCode is computed from the version, so a newer version always has a higher code and Android never
 // refuses an update as a downgrade. AppVersion.code in the app uses the same formula (a unit test guards it).
@@ -30,9 +30,13 @@ fun versionCodeFor(beta: Int?): Int {
 }
 
 val betaTags = providers.provider {
-    providers.exec {
-        commandLine("git", "tag", "-l", "v${appVersionName}-beta.*")
-    }.standardOutput.asText.get().trim()
+    // Song PLUS edition: built from a source zip without git history, so a missing git means "no beta tags".
+    runCatching {
+        providers.exec {
+            commandLine("git", "tag", "-l", "v${appVersionName}-beta.*")
+            isIgnoreExitValue = true
+        }.standardOutput.asText.get().trim()
+    }.getOrDefault("")
 }
 val betaNumber = betaTags.map { tags ->
     tags.lineSequence()
@@ -49,7 +53,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.bydassistantng"
+        // Song PLUS edition: its own id, so it installs next to (not over) the upstream app and keeps its own settings.
+        applicationId = "com.bydassistantng.songplus"
         minSdk = 24
         targetSdk = 37
         versionCode = versionCodeFor(null)
@@ -91,10 +96,12 @@ android {
         }
 
         release {
+            // Song PLUS edition: no code shrinking. The offline speech engine (Vosk) is reached through JNA, which
+            // the shrinker would strip or rename; a little larger APK is the safe trade.
             optimization {
-                enable = true
-                isMinifyEnabled = true
-                isShrinkResources = true
+                enable = false
+                isMinifyEnabled = false
+                isShrinkResources = false
             }
             signingConfig = if (file("signing.properties").exists()) {
                 signingConfigs.getByName("release")
@@ -137,6 +144,10 @@ androidComponents {
 }
 
 dependencies {
+    // Song PLUS edition: offline speech recognition for instant car commands (Apache-2.0). The @aar forms keep
+    // JNA's Android build (with its native library) instead of the desktop jar.
+    implementation("net.java.dev.jna:jna:5.13.0@aar")
+    implementation("com.alphacephei:vosk-android:0.3.47@aar")
     implementation(libs.dadb)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.okhttp)

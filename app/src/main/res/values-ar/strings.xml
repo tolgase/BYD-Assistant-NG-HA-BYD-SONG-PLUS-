@@ -451,4 +451,26 @@
     <string name="voice_speaker_headrest_note">أثناء حديثك مع المساعد يُضبط صوت مسند الرأس في السيارة على «تفاعلي» ويُشغَّل صوت المساعد على قناة الملاحة في السيارة، فيصدر من مسند رأس السائق فقط. ثم يعود صوت مسند الرأس إلى ما كان عليه. تبقى الموسيقى في مكبرات السيارة. يُضبط مستوى الصوت ضمن «مستوى الصوت» أدناه. يتطلب تفعيل تصحيح ADB كما في أوامر السيارة.</string>
     <string name="log_share_failed">تعذّرت مشاركة السجل.</string>
     <string name="log_showing_newest">يُعرض أحدث %1$d من %2$d حرفًا؛ وتُركت الأسطر الأقدم.</string>
+    <string name="language_french">الفرنسية</string>
+    <string name="dialect_tunisian">التونسية (الدارجة)</string>
+    <string name="banner_car_status">جارٍ قراءة حالة السيارة</string>
+    <string name="banner_scene">مشهد: %1$s</string>
+    <string name="quick_listening">بدون إنترنت: قل أمراً للسيارة</string>
+    <string name="quick_not_heard">لم أسمع شيئاً</string>
+    <string name="quick_not_command">بدون إنترنت، ليس أمراً للسيارة: %1$s</string>
+    <!-- Song PLUS edition: names -->
+    <string name="names_title">الأسماء</string>
+    <string name="setup_name_names">الأسماء</string>
+    <string name="names_setup_body">سمِّ مساعدك، وقل له كيف تنادي سيارتك وكيف يناديك. كلها اختيارية ويمكن تغييرها لاحقًا من الإعدادات.</string>
+    <string name="names_assistant_label">اسم المساعد</string>
+    <string name="names_assistant_example">مثلًا ياسمين</string>
+    <string name="names_car_label">اسم سيارتك</string>
+    <string name="names_car_example">مثلًا البيضاء</string>
+    <string name="names_driver_label">اسمك</string>
+    <string name="names_driver_example">مثلًا أكسل</string>
+    <string name="names_note">ما زلت تشغّل المساعد بزر المقود أو بلمسة. لا يستمع لاسمه طوال الوقت.</string>
+    <string name="names_row_title">اسم المساعد والسيارة</string>
+    <string name="names_row_hint">كيف يعرّف المساعد بنفسه، وكيف ينادي السيارة وينادونك</string>
+    <string name="names_unset">غير محدد</string>
+    <string name="names_later">لاحقًا</string>
 </resources>
