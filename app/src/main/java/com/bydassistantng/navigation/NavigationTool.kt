@@ -20,7 +20,7 @@ private const val MAX_DESTINATION_LENGTH = 200
 
 // Tried in this order. Google Maps is the usual maps handler on these head units; the others are what
 // else may be installed that understands the same intent.
-private val NAVIGATION_PACKAGES = listOf(
+private val NAVIGATION_PACKAGES = listOf<Pair<String?, String>>(
     "com.google.android.apps.maps" to "Google Maps",
     "net.osmand.plus" to "OsmAnd",
     "ru.yandex.yandexnavi" to "Yandex Navigator",
@@ -66,9 +66,13 @@ object NavigationTool {
 
     private fun start(context: Context, destination: String): JsonObject {
         val uri = Uri.parse("google.navigation:q=${Uri.encode(destination)}&mode=d")
-        for ((packageName, appName) in NAVIGATION_PACKAGES) {
+        // The named packages first, then whatever the car itself hands navigation to. A patched or renamed maps app —
+        // which is what a head unit without Play Services usually carries — installs under its own package name and
+        // would never match a fixed list, so the last attempt names no package and lets Android choose the handler.
+        val attempts = NAVIGATION_PACKAGES + (null to "the car's maps app")
+        for ((packageName, appName) in attempts) {
             val intent = Intent(Intent.ACTION_VIEW, uri)
-                .setPackage(packageName)
+                .apply { if (packageName != null) setPackage(packageName) }
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             if (intent.resolveActivity(context.packageManager) == null) continue
             try {

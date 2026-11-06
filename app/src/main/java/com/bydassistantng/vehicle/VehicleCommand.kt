@@ -14,12 +14,16 @@ data class VehicleCommand(
     val domain: VehicleDomain,
     val deviceType: Int? = null,
     val featureId: Int? = null,
+    /** What the car's own table of features (`BYDAutoFeatureIds`) calls [featureId], as `Group.NAME`. The name is what
+     * stays the same from car to car; the number may not. Null where the number is not one of the car's feature numbers. */
+    val featureName: String? = null,
     val displayName: String,
     /** Short names for the status banner (the long [displayName] is written for the model). */
     val label: String? = null,
     val labelAr: String? = null,
     val labelRu: String? = null,
     val labelPl: String? = null,
+    val labelId: String? = null,
     val invocation: VehicleInvocation,
     val parameter: VehicleParameter,
     /** For [VehicleInvocation.GenericFeatureSet]: the *state* id that reports what [featureId] (a
@@ -27,6 +31,8 @@ data class VehicleCommand(
      * reads back the value that was sent — the HAL accepts a set it doesn't understand without any
      * error, so "accepted" alone proves nothing. Null = no known read-back; reported as sent only. */
     val stateFeatureId: Int? = null,
+    /** What the car's own table calls [stateFeatureId], as `Group.NAME`. */
+    val stateFeatureName: String? = null,
     /** Added to the value before it is sent to (and compared with) the car, for controls whose
      * signal isn't what the car's own screen shows — e.g. the fridge's cooling set-point reads 13..25
      * for the −6..6 °C on its screen. The value users and the model deal in is always the screen one. */
@@ -49,6 +55,18 @@ data class VehicleCommand(
     /** For particular values, a different control and value to send instead (massage "off" is a mode
      * write, not an intensity of 0). The read-back still expects the value's normal state. */
     val overrides: List<ValueOverride> = emptyList(),
+    /** Nothing is sent unless the car answers a read of [stateFeatureId] first: a car that is not a recognised DiLink 5 may
+     * name this control without it being wired to anything, and would otherwise be told "sent" (see
+     * [CommandEntryDto.requiresReadbackElsewhere]). */
+    val requiresReadback: Boolean = false,
+    /**
+     * For a [VehicleInvocation.NamedMethod] that writes one feature (the climate device's typed setters): that feature, so the
+     * same value can be written straight to the car's native service when the car refuses the helper the device class (see
+     * [NativeAutoservice]). It is what the typed method writes, and the state read back is [stateFeatureId].
+     */
+    val nativeFeatureId: Int? = null,
+    /** What the car's own table calls [nativeFeatureId], as `Group.NAME`. */
+    val nativeFeatureName: String? = null,
 )
 
 /** What the car's signal is for the value a user speaks of, and the other way round. */
@@ -63,23 +81,25 @@ fun VehicleCommand.valueFor(signal: Int): Int = if (inverted) valueOffset - sign
  */
 val VehicleCommand.needsCarLink: Boolean get() = invocation !is VehicleInvocation.AudioStreamVolume
 
-/** When the command's value is [whenValue], send [sendValue] to [featureId] rather than the usual. */
-data class ValueOverride(val whenValue: Int, val featureId: Int, val sendValue: Int)
+/** When the command's value is [whenValue], send [sendValue] to [featureId] (the car's [featureName]) rather than the usual. */
+data class ValueOverride(val whenValue: Int, val featureId: Int, val sendValue: Int, val featureName: String? = null)
 
 /**
- * The name to show for this command in the language with this tag ("ar", "ru", "pl"; any other is English), falling back to
+ * The name to show for this command in the language with this tag ("ar", "ru", "pl", "id"/"in"; any other is English), falling back to
  * [VehicleCommand.displayName].
  */
 fun VehicleCommand.labelFor(languageTag: String): String = when (languageTag) {
     "ar" -> labelAr
     "ru" -> labelRu
     "pl" -> labelPl
+    // Android reports Indonesian as "in" (its legacy code); "id" is the current one.
+    "id", "in" -> labelId
     else -> label
 } ?: displayName
 
-/** [featureId] (a state id on the command's device) must currently read [equals]. [message] is what
+/** [featureId] (a state id on the command's device, the car's [featureName]) must currently read [equals]. [message] is what
  * the user hears when it doesn't. */
-data class StateRequirement(val featureId: Int, val equals: Int, val message: String)
+data class StateRequirement(val featureId: Int, val equals: Int, val message: String, val featureName: String? = null)
 
 sealed interface VehicleParameter {
     /** e.g. open/close/stop/half/breath -> 1/2/3/4/5. */
@@ -98,21 +118,30 @@ sealed interface VehicleInvocation {
      * [paramTypes] is the reflection signature (e.g. `["int", "int"]`) used to look up the method.
      * [argsTemplate] is the actual call arguments with exactly one `null` marking the position the
      * dispatch-time value fills.
+     *
+     * An on/off control that has a method for each ([offMethodName]: the climate device's `start` and `stop`) has no value
+     * slot: the value chooses the method, 0 calling [offMethodName] and anything else [methodName], both with the same
+     * arguments.
      */
     data class NamedMethod(
         val deviceClass: String,
         val methodName: String,
         val paramTypes: List<String>,
         val argsTemplate: List<Int?>,
+        val offMethodName: String? = null,
     ) : VehicleInvocation {
         init {
-            require(argsTemplate.count { it == null } == 1) {
-                "argsTemplate must have exactly one null (the dispatch-time value slot): $argsTemplate"
+            val slots = if (offMethodName == null) 1 else 0
+            require(argsTemplate.count { it == null } == slots) {
+                "argsTemplate must have exactly $slots null (the dispatch-time value slot): $argsTemplate"
             }
             require(paramTypes.size == argsTemplate.size) {
                 "paramTypes and argsTemplate must be the same length"
             }
         }
+
+        /** The method that carries out [value]. */
+        fun methodFor(value: Int): String = if (offMethodName != null && value == 0) offMethodName else methodName
     }
 
     /**

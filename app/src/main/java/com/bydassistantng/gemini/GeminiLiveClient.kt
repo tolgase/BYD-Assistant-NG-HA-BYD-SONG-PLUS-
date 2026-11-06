@@ -41,6 +41,9 @@ sealed interface LiveEvent {
     data object Interrupted : LiveEvent
     data class Failed(val reason: String, val kind: FailureKind = FailureKind.OTHER) : LiveEvent
     data object Closed : LiveEvent
+
+    /** The server is about to close this session. Song PLUS edition: a cue to move to a new one at the next break. */
+    data class GoAway(val timeLeft: String?) : LiveEvent
 }
 
 /**
@@ -61,6 +64,23 @@ class GeminiLiveClient @Inject constructor() {
     private val preconnectClient by lazy { httpClient.newBuilder().protocols(listOf(Protocol.HTTP_1_1)).build() }
     @Volatile private var preconnectedAtMs = 0L
     @Volatile private var setupSentAtMs = 0L
+
+    /**
+     * Song PLUS edition: the handle that reopens the session the server last said was resumable.
+     *
+     * Kept across a close on purpose — a socket that dropped mid-sentence is exactly when it is needed — and
+     * forgotten only when a new conversation begins, so one conversation's context is never handed to the next.
+     */
+    @Volatile private var resumeHandle: String? = null
+
+    /** True when a dropped session can be picked up where it was. */
+    val canResume: Boolean get() = resumeHandle != null
+
+    /** Called when a new conversation starts: the previous one's context is not this one's. */
+    fun forgetResumption() {
+        if (resumeHandle != null) AppLogger.log(TAG, "Forgetting the resumption handle: a new conversation")
+        resumeHandle = null
+    }
 
     private var webSocket: WebSocket? = null
     private val events = MutableSharedFlow<LiveEvent>(extraBufferCapacity = 64)
@@ -113,6 +133,7 @@ class GeminiLiveClient @Inject constructor() {
         tools: List<GeminiTool>?,
         voiceName: String?,
         timeoutMs: Long,
+        resume: Boolean = false,
     ): Boolean {
         close()
         lastSetupFailure = null
@@ -139,6 +160,8 @@ class GeminiLiveClient @Inject constructor() {
                         tools = tools,
                         inputAudioTranscription = JsonObject(emptyMap()),
                         outputAudioTranscription = JsonObject(emptyMap()),
+                        // Song PLUS edition: always ask for handles; carry one only when resuming.
+                        sessionResumption = LiveSessionResumption(handle = if (resume) resumeHandle else null),
                     ),
                 )
                 val functions = tools?.sumOf { it.functionDeclarations?.size ?: 0 } ?: 0
@@ -252,6 +275,17 @@ class GeminiLiveClient @Inject constructor() {
         }
 
         message.toolCall?.let { events.tryEmit(LiveEvent.ToolCall(it.functionCalls)) }
-        message.goAway?.let { AppLogger.log(TAG, "GoAway received: timeLeft=${it.timeLeft}") }
+        message.goAway?.let {
+            AppLogger.log(TAG, "GoAway received: timeLeft=${it.timeLeft}")
+            events.tryEmit(LiveEvent.GoAway(it.timeLeft))
+        }
+        // Kept only while the server says this point can be resumed from: a handle taken mid-generation is refused.
+        message.sessionResumptionUpdate?.let { update ->
+            val handle = update.newHandle
+            if (update.resumable == true && !handle.isNullOrEmpty()) {
+                if (resumeHandle == null) AppLogger.log(TAG, "Session resumption is available on this session")
+                resumeHandle = handle
+            }
+        }
     }
 }

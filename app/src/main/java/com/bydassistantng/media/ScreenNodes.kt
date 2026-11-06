@@ -66,7 +66,31 @@ object ScreenDump {
  */
 object FirstResult {
     const val SPOTIFY = "com.spotify.music"
+
+    /** The package the official app uses, and the one a link is addressed to when no other YouTube is installed. */
     const val YOUTUBE = "com.google.android.youtube"
+
+    /**
+     * Song PLUS edition: a patched YouTube is a different package from the official one.
+     *
+     * A head unit with no Play Services often carries a ReVanced build instead, which installs under its own name
+     * (`app.revanced.android.youtube` for the microG build, `app.rvx.android.youtube` for Extended) and sometimes
+     * under a name the user chose when patching. The screens are YouTube's, so every rule here applies to it — but
+     * a rule keyed on the official package alone would not be found, and "play X on YouTube" would open the app and
+     * then do nothing. So YouTube is recognised by its package family, not by one constant, and any package whose
+     * name ends in `.youtube` is treated as one: that is what a renamed patch keeps.
+     */
+    private val YOUTUBE_PACKAGES = listOf(
+        YOUTUBE,
+        "app.revanced.android.youtube",
+        "app.rvx.android.youtube",
+        "com.google.android.youtube.tv",
+    )
+
+    fun isYouTube(packageName: String): Boolean =
+        packageName in YOUTUBE_PACKAGES || packageName.endsWith(".youtube")
+
+    fun isSpotify(packageName: String): Boolean = packageName == SPOTIFY
 
     private const val SPOTIFY_ROW = ":id/row_root"
     private const val SPOTIFY_SONG_MENU = "More options for song"
@@ -75,20 +99,20 @@ object FirstResult {
      * Null when the package has no rule or its results are not on screen (yet). With a [query], the results must
      * be the ones for it: an app that kept the page of an earlier search must not have that pressed instead.
      */
-    fun forPackage(packageName: String, nodes: List<ScreenNode>, kind: MediaKind, query: String = ""): TapPoint? = when (packageName) {
-        SPOTIFY -> spotify(nodes, kind)
-        YOUTUBE -> youtube(nodes, kind, query)
+    fun forPackage(packageName: String, nodes: List<ScreenNode>, kind: MediaKind, query: String = ""): TapPoint? = when {
+        isSpotify(packageName) -> spotify(nodes, kind)
+        isYouTube(packageName) -> youtube(nodes, kind, query)
         else -> null
     }
 
-    fun hasRule(packageName: String): Boolean = packageName == SPOTIFY || packageName == YOUTUBE
+    fun hasRule(packageName: String): Boolean = isSpotify(packageName) || isYouTube(packageName)
 
     /**
      * Whether finding the result needs the system's UI automation, which switches the accessibility services
      * off while it looks (so it must wait until no conversation is running). Spotify's rows are found from the
      * app's own view dump instead.
      */
-    fun needsUiAutomation(packageName: String): Boolean = packageName == YOUTUBE
+    fun needsUiAutomation(packageName: String): Boolean = isYouTube(packageName)
 
     /**
      * Spotify from [ViewHierarchy] nodes. For a song, the first row that is a song (its "more options" button says
@@ -171,10 +195,10 @@ object FirstResult {
      */
     private fun youtube(nodes: List<ScreenNode>, kind: MediaKind, query: String): TapPoint? {
         if (query.isNotBlank()) {
-            val shown = nodes.firstOrNull { it.packageName == YOUTUBE && it.resourceId.endsWith("id/search_query") }?.text
+            val shown = nodes.firstOrNull { isYouTube(it.packageName) && it.resourceId.endsWith("id/search_query") }?.text
             if (shown == null || !TextMatch.same(shown, query)) return null
         }
-        val items = nodes.filter { it.packageName == YOUTUBE && it.clickable && it.bottom - it.top >= YOUTUBE_MIN_RESULT_HEIGHT }
+        val items = nodes.filter { isYouTube(it.packageName) && it.clickable && it.bottom - it.top >= YOUTUBE_MIN_RESULT_HEIGHT }
         val video = items.firstOrNull { it.description.trimEnd().endsWith(" - play video", ignoreCase = true) }
         val short = items.firstOrNull { it.description.trimEnd().endsWith(" - play Short", ignoreCase = true) }
         val chosen = video ?: short ?: return null

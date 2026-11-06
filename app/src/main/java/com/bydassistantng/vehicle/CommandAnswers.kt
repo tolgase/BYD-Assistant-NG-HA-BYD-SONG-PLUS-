@@ -13,9 +13,13 @@ internal object CommandAnswers {
 
     private const val SERVICE_ACCEPTED_NOTE = "Done: the service accepted it. Do not send it again; tell the user it is done."
 
+    private const val CAR_ACCEPTED_NOTE = "Done: the car accepted it. Do not send it again; tell the user it is done."
+
     private val underWay = Regex("""under way: now at (-?\d+), heading for (-?\d+)""")
 
-    fun forModel(note: String?): String? {
+    fun forModel(rawNote: String?): String? {
+        // The log shows which way the note came; the model is not told.
+        val note = rawNote?.removeSuffix(NativeAnswer.NATIVE_TAG)
         if (note.isNullOrBlank()) return UNCHECKED_NOTE
         underWay.find(note)?.let { m ->
             return "On its way: now at ${m.groupValues[1]}, heading for ${m.groupValues[2]}. " +
@@ -24,6 +28,8 @@ internal object CommandAnswers {
         return when {
             note.startsWith("HAL returned") || note.startsWith("sent, but") -> UNCHECKED_NOTE
             note.startsWith("the service accepted") -> SERVICE_ACCEPTED_NOTE
+            // Song PLUS edition: writes through autoservice; an accepted write is done (see ReflectionVehicleController).
+            note.startsWith("autoservice accepted") || note.startsWith("the car accepted it") -> CAR_ACCEPTED_NOTE
             else -> note
         }
     }

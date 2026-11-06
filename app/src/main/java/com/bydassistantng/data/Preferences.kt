@@ -23,7 +23,7 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
-enum class AssistantLanguage(val bcp47: String) { AUTO(""), ENGLISH("en"), ARABIC("ar"), RUSSIAN("ru"), POLISH("pl") }
+enum class AssistantLanguage(val bcp47: String) { AUTO(""), ENGLISH("en"), ARABIC("ar"), RUSSIAN("ru"), POLISH("pl"), INDONESIAN("id"), FRENCH("fr") }
 
 /** Which Arabic the assistant should speak. [MATCH] says nothing, so the model follows the user. */
 enum class ArabicDialect(val promptName: String?) {
@@ -32,6 +32,7 @@ enum class ArabicDialect(val promptName: String?) {
     EGYPTIAN("Egyptian Arabic"),
     LEVANTINE("Levantine Arabic"),
     MAGHREBI("Maghrebi Arabic (North African)"),
+    TUNISIAN("Tunisian Arabic (Derja, which freely mixes in French words)"),
     MODERN_STANDARD("Modern Standard Arabic"),
 }
 
@@ -85,6 +86,29 @@ class PreferencesRepository @Inject constructor(@ApplicationContext context: Con
         val VOICE_SENSITIVITY = intPreferencesKey("voice_sensitivity")
         val LEVEL_GATE_ENABLED = booleanPreferencesKey("level_gate_enabled")
         val MUSIC_HINT_ENABLED = booleanPreferencesKey("music_hint_enabled")
+        val ASSISTANT_NAME = stringPreferencesKey("assistant_name")
+        val CAR_NAME = stringPreferencesKey("car_name")
+        val DRIVER_NAME = stringPreferencesKey("driver_name")
+        val NAMES_ASKED = booleanPreferencesKey("names_asked")
+    }
+
+    /** What the assistant is called, what the driver calls the car, and the driver's own name (each may be blank). */
+    val identity: Flow<AssistantIdentity> = dataStore.data.map {
+        AssistantIdentity(it[Keys.ASSISTANT_NAME].orEmpty(), it[Keys.CAR_NAME].orEmpty(), it[Keys.DRIVER_NAME].orEmpty())
+    }
+    /** Whether the user has been offered the naming step yet (new installs during setup, updated ones once on Home). */
+    val namesAsked: Flow<Boolean> = dataStore.data.map { it[Keys.NAMES_ASKED] ?: false }
+    suspend fun setIdentity(identity: AssistantIdentity) {
+        val clean = identity.cleaned()
+        dataStore.edit {
+            it[Keys.ASSISTANT_NAME] = clean.assistant
+            it[Keys.CAR_NAME] = clean.car
+            it[Keys.DRIVER_NAME] = clean.driver
+            it[Keys.NAMES_ASKED] = true
+        }
+    }
+    suspend fun markNamesAsked() {
+        dataStore.edit { it[Keys.NAMES_ASKED] = true }
     }
 
     val assistantLanguage: Flow<AssistantLanguage> = dataStore.data.map { prefs ->

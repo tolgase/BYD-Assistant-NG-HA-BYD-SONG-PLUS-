@@ -26,18 +26,48 @@ Two branches:
 
 | Branch | Purpose | What happens |
 | --- | --- | --- |
-| `main` | Development. Open pull requests against it | Every push runs unit tests and lint ([ci.yml](.github/workflows/ci.yml)) |
-| `stable` | What has been released | Pushing to it runs the tests and lint, builds and signs the app, and publishes a GitHub **release** `v<version>` ([stable.yml](.github/workflows/stable.yml)) |
+| `main` | Development. Open pull requests against it | Every push runs unit tests and lint ([ci.yml](.github/workflows/ci.yml)); adding the release notes of the next beta also builds that beta (below) |
+| `stable` | What has been released | Pushing to it runs the tests and lint, builds and signs the app, and puts the **release** `v<version>` on GitHub as a draft, to be published after a last look ([stable.yml](.github/workflows/stable.yml)) |
 
-**Pre-releases** are built from `main` on request ([beta.yml](.github/workflows/beta.yml)): commit with a message
-that begins with `beta:`, or press *Run workflow* for "Build Beta" in the Actions tab. It tests, builds, signs and
-publishes `v<version>-beta.N`, numbered automatically.
+**Pre-releases** are built from `main` when the release notes of the next beta are pushed
+([beta.yml](.github/workflows/beta.yml)). The notes are a file that is read and approved before anything is published, and
+the page of the release is that file, as it is:
 
-**To release:** test a beta on a vehicle, then fast-forward `stable` to the commit you tested:
+1. `tools/new_release_notes.sh beta` writes `release-notes/v<version>-beta.<N>.md` for the next beta, with the commits
+   since the previous release as bullets under a comment.
+2. Read the lines: keep them, reword them, or drop the ones of little weight (see [release-notes/README.md](release-notes/README.md)).
+   Show the result to the maintainer, then delete the comment; the check refuses the file while it is there.
+3. Commit the file and push `main`. **Adding that file starts the build.** The workflow first checks the file and the beta
+   number and stops within seconds when they are wrong. It then tests, builds, signs and publishes `v<version>-beta.<N>`
+   (numbered from the existing tags) with the file as the page and a *Full Changelog* link under it. Nothing is edited on
+   GitHub afterwards.
+
+To see a build and its page without publishing, push the file to another branch, or press *Run workflow* for "Build Beta" in
+the Actions tab with `dry_run`. To change the text of a beta that is out, change its file on `main` and run the workflow with
+`notes_only` and the tag: the notes go onto the release, nothing is built.
+
+**To release:** test a beta on a vehicle, then:
+
+1. `tools/new_release_notes.sh stable` writes `release-notes/v<version>.md` from the commits since the previous release and
+   the notes of the betas. Make it the page of the release (a longer list of what is new, if you want one), show it to the
+   maintainer, delete the comment, and push it to `main`.
+2. Fast-forward `stable` to the commit you tested:
 
 ```bash
 git push origin main:stable
 ```
+
+The workflow ([stable.yml](.github/workflows/stable.yml)) first checks, within seconds, that the notes exist and that **the app
+is the one of the newest beta** (nothing under `app/` or in the Gradle files changed since it): a release is the build of what was
+tested. It then tests, builds and signs, and puts the release on GitHub as a **draft** with the notes file as its page.
+Nobody can see a draft and the app cannot offer it. Look at the page and the APK, then publish it:
+
+```bash
+gh release edit v<version> --draft=false --latest
+```
+
+A run by hand (*Run workflow* for "Build Stable") can be a `dry_run`, which does everything but create the draft; in the rare
+case of a release with no tested beta, or with changes since it, it can use `allow_changes`.
 
 A version can be published once: raise `appVersionName` in `app/build.gradle.kts` first (`major.minor.patch`, each
 0-99), or the workflow stops at once with a message saying so. The Android `versionCode` is computed from the name, so
@@ -52,8 +82,8 @@ build on the **channel** the user follows (Settings → Advanced): *Stable* sees
 releases alike, whichever is newer. It never offers a build that is not newer than the installed one, so switching
 channel cannot downgrade.
 
-- The release notes shown under *What's new* are the commit subjects since the previous release, written by
-  [`tools/release_notes.sh`](tools/release_notes.sh) — so write commit subjects a user could read.
+- The release notes shown under *What's new* are the page of the release, which is the file `release-notes/<tag>.md` of
+  that beta or stable release (see above) with the *Full Changelog* link the app leaves out.
 - An update is downloaded only from the repository's own release assets, checked against the size and SHA-256 GitHub
   recorded for the file, and checked to be the same package signed by the same key as the installed app, before it is
   handed to the installer.
@@ -117,7 +147,7 @@ in step with [exterior-speaker.md](docs/byd-internals/exterior-speaker.md) and
    | --- | --- |
    | `id`, `domain` | e.g. `seat.driver.heating`, `SETTING`. The part before the first dot is the **family** (the function the model calls, here `seat`) and the rest its **setting** (`driver.heating`); keep to the existing families unless there really is a new part of the car. A blocked domain is dropped at load time |
    | `displayName` | A description for the model (long is fine) |
-   | `label`, `labelAr`, `labelRu`, `labelPl` | Short names for the status banner, in English, Arabic, Russian and Polish |
+   | `label`, `labelAr`, `labelRu`, `labelPl`, `labelId` | Short names for the status banner, in English, Arabic, Russian, Polish and Indonesian |
    | `deviceType`, `featureId` | The device and the **control** id (generic route), or the A/C `propertyId` and `area` |
    | `stateFeatureId` | The **state** id to read back. Required for anything you can read |
    | `parameter` | `fixedEnum` (`options`) or `range` (`min`, `max`, `unit`) in the units a user speaks |
@@ -133,7 +163,7 @@ in step with [exterior-speaker.md](docs/byd-internals/exterior-speaker.md) and
 
 ## Translations
 
-All text is in `app/src/main/res/values/strings.xml`; Arabic (`values-ar`), Russian (`values-ru`) and Polish (`values-pl`) are there already.
+All text is in `app/src/main/res/values/strings.xml`; Arabic (`values-ar`), Russian (`values-ru`), Polish (`values-pl`) and Indonesian (`values-in`, the legacy code Android still uses for Indonesian) are there already.
 Add `values-<code>/strings.xml` with the **same keys and placeholders** (a test checks this), and add the command
 labels to the registry (`label<Code>` in `vehicle_commands.json`, `labelFor` in `VehicleCommand.kt`). A new language
 the assistant is to speak also goes into `AssistantLanguage`, the prompt in `ConversationShared.kt` and the app language

@@ -27,7 +27,14 @@ data class LiveSetup(
     // an absent field means "don't bother," per the setup schema.
     val inputAudioTranscription: JsonObject? = null,
     val outputAudioTranscription: JsonObject? = null,
+    // Song PLUS edition: present (even as `{}`) asks the server to hand out resumption handles, so a session that
+    // drops can be picked up where it was instead of starting over with the earlier turns forgotten. With a handle
+    // it asks to resume that session. Absent, the server keeps nothing and a reconnect is a new conversation.
+    val sessionResumption: LiveSessionResumption? = null,
 )
+
+@Serializable
+data class LiveSessionResumption(val handle: String? = null)
 
 // No default here deliberately: GeminiLiveClient's encodeDefaults=false setting omits any field
 // equal to its own default, and this is only ever constructed with listOf("AUDIO") — a defaulted
@@ -86,7 +93,15 @@ data class LiveServerMessage(
     val toolCall: LiveToolCall? = null,
     val toolCallCancellation: JsonObject? = null,
     val goAway: LiveGoAway? = null,
+    val sessionResumptionUpdate: LiveSessionResumptionUpdate? = null,
 )
+
+/**
+ * The handle to reconnect with, sent repeatedly as a session runs. [resumable] false means this moment cannot be
+ * resumed (the model is mid-generation), so the handle kept must be the last one that said it could.
+ */
+@Serializable
+data class LiveSessionResumptionUpdate(val newHandle: String? = null, val resumable: Boolean? = null)
 
 @Serializable
 data class LiveServerContent(

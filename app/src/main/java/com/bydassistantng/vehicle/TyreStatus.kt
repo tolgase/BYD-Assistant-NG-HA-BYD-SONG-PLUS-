@@ -18,6 +18,7 @@ enum class VehicleQuery(val id: String) {
     AIR_QUALITY("air_quality"),
     HEADREST_SOUND("headrest_sound"),
     DRIVER_PRESENCE("driver_presence"),
+    CAR_STATUS("car_status"),
     ;
 
     companion object {

@@ -229,11 +229,12 @@ fun SettingButton(
 
 /** The switch of a row, a little larger than the stock one to be easy to hit in a car. */
 @Composable
-fun SettingSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+fun SettingSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Unit, enabled: Boolean = true) {
     val colors = MaterialTheme.colorScheme
     Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,
+        enabled = enabled,
         colors = SwitchDefaults.colors(
             checkedThumbColor = Color.White,
             checkedTrackColor = colors.primary,
@@ -255,13 +256,15 @@ fun SwitchSetting(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     below: (@Composable ColumnScope.() -> Unit)? = null,
+    // A setting that depends on another one: shown, so it can be read, but not something to press yet.
+    enabled: Boolean = true,
 ) {
     SettingRow(
         title = title,
         subtitle = subtitle,
         note = note,
-        onClick = { onCheckedChange(!checked) },
-        trailing = { SettingSwitch(checked, onCheckedChange) },
+        onClick = if (enabled) ({ onCheckedChange(!checked) }) else null,
+        trailing = { SettingSwitch(checked, onCheckedChange, enabled) },
         below = below,
     )
 }

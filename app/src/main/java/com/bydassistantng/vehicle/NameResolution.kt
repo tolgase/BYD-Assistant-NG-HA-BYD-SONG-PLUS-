@@ -1,0 +1,94 @@
+package com.bydassistantng.vehicle
+
+/**
+ * Finds a command's numbers in the car's own table of features, by name, so that a command is sent to what this car calls
+ * the control and not to what another car, or the car this registry was verified on, numbers that way.
+ *
+ * Every number a registry entry holds has the name the car's table gives it (`featureName`, `stateFeatureName`, and the same on
+ * `requires` and on each override). Given the car's table ([CarFeatureTable]) an entry becomes one of two things:
+ *  - the entry with the car's numbers in place of its own (unchanged on the car it was verified on, where every name has the
+ *    number it already has), or
+ *  - **withheld**, with the names the car does not have: nothing is offered for it and nothing is sent, because a number the
+ *    car does not name is not known to be this control on this car, and it may be another feature's.
+ *
+ * Which missing names withhold a command: the control's, the precondition's and any override's (the command cannot be
+ * carried out as it is meant), and the state that reports the result only where the command insists on that reading
+ * ([CommandEntryDto.requiresReadback]). A command whose state the car does not name is otherwise still sent, and the answer is
+ * "sent" rather than a verdict from a number that may mean something else.
+ */
+internal object NameResolution {
+    sealed interface Outcome {
+        /** The entry as this car numbers it. */
+        data class Use(val entry: CommandEntryDto) : Outcome
+
+        /** The car's table lacks these names: the command is not available on this car. */
+        data class Withhold(val missing: List<String>) : Outcome
+    }
+
+    fun resolve(entry: CommandEntryDto, table: Map<String, Int>): Outcome {
+        val generic = entry.invocation.type == "genericFeatureSet"
+        // The A/C reaches its control through its own binder property, but the numbers it reads the result back with are
+        // the car's own, and they are not the same from line to line: resolve its names too, and never withhold it — a
+        // name this car does not use simply leaves the verified number in place, which is what the entry always used.
+        val acProperty = entry.invocation.type == "acBinderProperty"
+        // The dashcam and the volume use no feature numbers of the car's table.
+        if (!generic && !acProperty && entry.invocation.type != "namedMethod") return Outcome.Use(entry)
+
+        val missing = ArrayList<String>()
+        fun number(name: String?, fallback: Int): Int {
+            if (name == null) return fallback
+            return table[name] ?: fallback.also { missing += name }
+        }
+
+        // The precondition belongs to a typed setter as well (the A/C's temperature is only set on a car showing Celsius).
+        var result = entry.copy(requires = entry.requires?.let { it.copy(featureId = number(it.featureName, it.featureId)) })
+        if (acProperty) {
+            // Its own numbers, where this car names them; otherwise exactly what the entry held.
+            val write = entry.featureName?.let { table[it] } ?: entry.featureId
+            val state = entry.stateFeatureName?.let { table[it] } ?: entry.stateFeatureId
+            return Outcome.Use(entry.copy(featureId = write, stateFeatureId = state))
+        }
+        if (generic) {
+            // The car's own number for the name wins. An entry may then carry a name and no number at all, which is how a
+            // control is added without writing this car's numbers down: the name is the car-independent fact, and a car
+            // that does not use the name has no number to fall back on, so the command is withheld rather than guessed.
+            val write = when {
+                entry.featureName != null && table[entry.featureName] != null -> table[entry.featureName]
+                entry.featureId != null -> number(entry.featureName, entry.featureId)
+                entry.featureName != null -> null.also { missing += entry.featureName }
+                else -> null
+            }
+            result = result.copy(
+                featureId = write,
+                overrides = entry.overrides.map { it.copy(featureId = number(it.featureName, it.featureId)) },
+            )
+        }
+        // The control written straight to the car's service: by name too, and a car that lacks the name only loses that route.
+        entry.nativeFeatureName?.let { name ->
+            val number = table[name]
+            result = result.copy(nativeFeatureId = number, nativeFeatureName = if (number == null) null else name)
+        }
+        val stateName = entry.stateFeatureName
+        if (entry.stateFeatureId != null && stateName != null) {
+            val state = table[stateName]
+            result = when {
+                state != null -> result.copy(stateFeatureId = state)
+                entry.requiresReadback -> result.also { missing += stateName }
+                else -> result.copy(stateFeatureId = null, stateFeatureName = null)
+            }
+        }
+        return if (missing.isEmpty()) Outcome.Use(result) else Outcome.Withhold(missing.distinct())
+    }
+}
+
+/**
+ * The number this car gives a feature the app reads outside the command registry (the headrest sound, who sits in the driver's
+ * seat, the cabin temperature). Where the car's table is known, its own number for [of]'s name; where it could not be read, the
+ * number the feature was verified with (what the app always used); where the table lacks the name, none.
+ */
+internal object CarNumbers {
+    fun of(name: String, verified: Int): Int? {
+        val table = VehicleCommandRegistry.carTable ?: return verified
+        return table[name]
+    }
+}

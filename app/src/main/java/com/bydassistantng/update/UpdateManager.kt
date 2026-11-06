@@ -48,7 +48,9 @@ sealed interface UpdateState {
 
     /** [channelLatest] is the newest build the channel offers (older than, or the same as, what is installed). */
     data class UpToDate(val checkedAt: Long, val channelLatest: AppVersion?) : UpdateState
-    data class Available(val release: UpdateRelease) : UpdateState
+
+    /** [release] is the build on offer. [newer] is every release the channel offers that is newer than what is installed, newest first ([release] is the first), for the notes of the ones that were skipped. */
+    data class Available(val release: UpdateRelease, val newer: List<UpdateRelease> = listOf(release)) : UpdateState
     data class Downloading(val release: UpdateRelease, val fraction: Float) : UpdateState
     data class Installing(val release: UpdateRelease) : UpdateState
     data class AwaitingSystemInstaller(val release: UpdateRelease) : UpdateState
@@ -83,7 +85,10 @@ class UpdateManager @Inject constructor(
     private val checkLock = Mutex()
     private var installJob: Job? = null
 
-    @Volatile private var source: UpdateSource? = UpdateSource.forRepo(BuildConfig.UPDATE_REPO)
+    // Your own server when the build names one, otherwise the GitHub repository the build names.
+    @Volatile private var source: UpdateSource? =
+        if (BuildConfig.UPDATE_URL.isNotBlank()) UpdateSource.forUrl(BuildConfig.UPDATE_URL)
+        else UpdateSource.forRepo(BuildConfig.UPDATE_REPO)
     @Volatile private var sourceIsTestOverride = false
 
     private val http = OkHttpClient.Builder()
@@ -91,7 +96,13 @@ class UpdateManager @Inject constructor(
         .readTimeout(30, TimeUnit.SECONDS)
         .cache(Cache(File(context.cacheDir, "update_http"), 2L * 1024 * 1024))
         .addInterceptor { chain ->
-            chain.proceed(chain.request().newBuilder().header("User-Agent", "BYD-Assistant-NG/${BuildConfig.VERSION_NAME}").build())
+            val b = chain.request().newBuilder().header("User-Agent", "BYD-Assistant-NG/${BuildConfig.VERSION_NAME}")
+            // The token only ever goes to the host the build was pointed at, never to GitHub or anywhere a redirect leads.
+            val host = source?.ownHost
+            if (BuildConfig.UPDATE_TOKEN.isNotBlank() && host != null && chain.request().url.host == host) {
+                b.header("x-app-token", BuildConfig.UPDATE_TOKEN)
+            }
+            chain.proceed(b.build())
         }
         .build()
 
@@ -175,7 +186,7 @@ class UpdateManager @Inject constructor(
                 }
             } catch (e: CancellationException) {
                 installer.sweep()
-                _state.value = UpdateState.Available(release)
+                _state.value = availableState(release)
                 throw e
             } catch (e: UpdateFailure) {
                 AppLogger.log(TAG, "Update to ${release.version} failed: ${e.message}")
@@ -231,10 +242,20 @@ class UpdateManager @Inject constructor(
         }
     }
 
+    /** The releases newer than the installed build that the last check found, newest first (see [UpdateState.Available.newer]). */
+    @Volatile private var offeredNewer: List<UpdateRelease> = emptyList()
+
+    /** The state that offers [release], with the notes of the releases skipped on the way to it where the last check found them. */
+    private fun availableState(release: UpdateRelease): UpdateState.Available =
+        UpdateState.Available(release, offeredNewer.takeIf { it.firstOrNull()?.tag == release.tag } ?: listOf(release))
+
     private suspend fun applyCatalog(releases: List<UpdateRelease>, notify: Boolean) {
-        val newest = ReleaseCatalog.latest(releases, channel.first())
-        val next = if (newest != null && newest.version.code > installed.versionCode) {
-            UpdateState.Available(newest)
+        val onChannel = channel.first()
+        val newer = ReleaseCatalog.newerThan(releases, onChannel, installed.versionCode)
+        offeredNewer = newer
+        val newest = ReleaseCatalog.latest(releases, onChannel)
+        val next = if (newer.isNotEmpty()) {
+            UpdateState.Available(newer.first(), newer)
         } else {
             UpdateState.UpToDate(System.currentTimeMillis(), newest?.version)
         }

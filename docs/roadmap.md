@@ -20,6 +20,52 @@ The other lead, `LIGHTS_FLASHING_LIGHT_AND_HORN` (the "find my car" flash and ho
 cloud and over a direct Bluetooth connection, show the command reaching the car without passing through the Android
 side; the head unit only sees the lights come on. See [findings-and-dead-ends.md](byd-internals/findings-and-dead-ends.md).
 
+## DiLink 5.0
+
+Two logs from one owner (a BYD Song Plus, Android 12) show what stopped the app on that generation (see
+[platforms.md](byd-internals/platforms.md#status)): the climate, bodywork, setting and instrument device classes refuse the
+vehicle helper, which is the ADB shell, for want of a runtime permission it cannot hold (`BYDAUTO_<DEVICE>_COMMON`,
+[hal-and-permissions.md](byd-internals/hal-and-permissions.md#dilink-50-the-device-classes-ask-for-a-runtime-permission)). The tyre
+pressure, whose class has no such permission, was read. The second log showed that the permission is a normal one, which the app
+already holds, and the car's own libraries show that its native service lets the shell through by its uid.
+
+**Built, not yet run on a car: the native route.** Where a device class refuses the helper, the helper makes the same read or
+write one layer lower, as a call to the car's native service, for the same registry commands with the same read-back (and the
+outside temperature, the inside temperature, the door read and the drive mode, whose speed limit and listed values are checked
+first as on any car). The call layout was read from the car's own binaries and the
+route has run in a simulator; see [the native route](byd-internals/hal-and-permissions.md#the-native-route) for what it is and how
+to check it. The ways not taken, none built:
+
+| Way | What it needs | Against it |
+| --- | --- | --- |
+| **The app holds the permission and the helper acts on its behalf** | The app already holds `…_COMMON` (a normal permission it declares). The helper hosts a Binder that the app calls; while it handles such a call the check is made against the app's uid, and the car's native side still sees the shell. | A new channel between app and helper, only worth it if the native route fails on a car. |
+| **The helper is given a stand-in `Context` that answers the check** | A small class. | It works around the car's check instead of satisfying it. |
+| **Root** | A rooted head unit. | Not something the app can ask of an owner. |
+
+| Item | What it needs |
+| --- | --- |
+| **Check the native route on the Leopard** | The Leopard online and a build with the route: first the read-only check (`native=` in the log line), then a reversible write with `debug.bydang.nativeroute always`, then the drive mode (Eco and back), parked (the steps are in the notes linked above). |
+| **The owner's next log** | The Song Plus with a build that has the route: `native=` says whether the service answers, then the window and the A/C commands say whether they take. |
+| **Whether `airconditioning` is the climate service** | The `acalias=` field of that log: if its interface is `com.byd.ac.IBydAcService` the A/C service route is used under that name. |
+| **The drive mode's speed on a car that refuses the Speed device** | Not expected: the Speed device class has no runtime permission and the Song Plus logs got past the speed check four times. If a car refused it, no drive mode request would be sent (the answer says the speed was not reported), and the limit would need a speed read of its own through the service. |
+| **Audio and light on DiLink 5.0** | Neither device has a `…_COMMON` permission in the framework, so the helper may be able to use them there; the logs show no result for either. |
+
+## DiLink 3 and DiLink 4
+
+The app looks every number up by name in the car's own table of features (see [platforms.md](byd-internals/platforms.md)): a
+command takes the car's number for each of its names, and a command whose control the car does not name is not offered and
+never sent. That has been checked on one DiLink 5.1 car (the table agrees everywhere, so nothing changes there) and on
+simulated cars; none of it has been tried on a DiLink 3 or 4 car. What is still open:
+
+| Item | What it needs |
+| --- | --- |
+| **Confirm it on a car** | Someone with a DiLink 3 or DiLink 4 car, parked, to try the window open/close and position controls and send the app log (*Settings → App → View app log → Save to Downloads*, private details hidden). The header of the saved file and the helper's `Vehicle helper found …` line say what the car's own table holds and, by name, which of the registry's numbers it agrees with (`names=`), numbers differently (`differ=`, the car's number is the one used) or lacks (`absent=`, and `withheld=` for the commands that costs). |
+| **What the properties hold** | The log line shows `ro.vehicle.type` and the other identification properties of that car. On our DiLink 5.1 car `ro.vehicle.type` is `Di5.1_5.0UI` (`<platform>_<interface>`), so its first part names the platform. They are logged and do not decide, because the numbers are what the app sends; what DiLink 3 and 4 cars put there would show in their logs. |
+| **A DiLink 3 window that does not move** | A car may accept the open/close control without moving the glass while the percent control works; we have not seen one. The app does not notice an `open` that moved nothing; it would read the window's position before and after and fall back to the percent control. Needs a car that does this. |
+| **The generic call on DiLink 3** | If a DiLink 3 log shows the helper cannot find the generic `set` or the device classes (the `calls` and `classes` fields of that line), the commands would have to reach the car through the `autoservice` system service instead. Not built: it needs a car to confirm. |
+| **The features that write to the car and were verified on one car** | The drive mode, the exterior speaker and the instrument cluster stay off on a car whose table does not give their names the verified numbers (see `ExteriorSpeakerSwitch.isOnThisCar`). They could take the car's own number by name like the registry's commands, but each is guarded by a check of the exact id, which would have to follow; not done. |
+| **A Toyota-protocol car** | The car's own class numbers features from `sys.car.protocol` (CAN-FD, Toyota or classic CAN). A Toyota-protocol car matches neither of the two schemes the platform check knows, so it reads as not recognised, and the commands are looked up by name all the same. Whether the platform check should name that scheme is open; it only changes how careful the app is. |
+
 ## Features planned
 
 Ideas for the assistant itself, with a priority. None is built, and for each the first step is to check on the car what
