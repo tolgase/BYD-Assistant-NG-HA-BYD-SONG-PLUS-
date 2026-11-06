@@ -62,7 +62,31 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
             )
             VehicleQuery.HEADREST_SOUND -> readHeadrestSound()
             VehicleQuery.DRIVER_PRESENCE -> readDriverPresence()
+            VehicleQuery.CAR_STATUS -> readCarStatus()
         }
+    }
+
+    /**
+     * Song PLUS edition: everything the assistant answers "how is the car?" with, in one read — what is open, the
+     * battery and range, the cabin, the doors. Each device class is asked for on its own and a class this car does not
+     * have simply contributes nothing, so one missing device does not lose the whole answer.
+     */
+    private fun readCarStatus(): VehicleDispatchResult = try {
+        val devices = mapOf(
+            1000 to "android.hardware.bydauto.ac.BYDAutoAcDevice",
+            1001 to "android.hardware.bydauto.bodywork.BYDAutoBodyworkDevice",
+            1023 to "android.hardware.bydauto.setting.BYDAutoSettingDevice",
+        ).mapValues { (_, cls) -> runCatching { getOrCreateInstance(cls) }.getOrNull() }
+        val statistic = runCatching { getOrCreateInstance("android.hardware.bydauto.statistic.BYDAutoStatisticDevice") }.getOrNull()
+        val encoded = CarStatus.encode(
+            read = { type, id -> devices[type]?.let { readState(it, type, id) } },
+            statistic = { method ->
+                statistic?.let { s -> runCatching { s.javaClass.getMethod(method).invoke(s) as? Number }.getOrNull() }
+            },
+        )
+        VehicleDispatchResult.Success(encoded)
+    } catch (t: Throwable) {
+        queryFailure(t)
     }
 
     /** The outside air temperature from the cluster, and the unit the cluster shows it in. */

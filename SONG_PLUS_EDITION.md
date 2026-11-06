@@ -57,7 +57,7 @@ rebased onto it instead of carrying its own version of the same thing.
   the names given to the assistant, the car and the driver.
 - **Kept from upstream:** Indonesian, the shared-log redaction, and the release-notes tooling.
 
-## 1.6.0: update from your own server
+## 1.6.1: update from your own server
 - **Updates from your own server**, not GitHub. Build with
   `-Passistant.updateUrl=https://<your server>/<path>/api/app/voice/releases` and, where the server asks for one,
   `-Passistant.updateToken=<token>`. Left empty, the app behaves exactly as upstream and checks GitHub.
@@ -67,3 +67,5 @@ rebased onto it instead of carrying its own version of the same thing.
   tilts in reverse all read "not fitted" on a Song PLUS; they are no longer offered.
 - **A control can be added by name alone**, with no feature number written down.
 - **Fixed:** `ac.compressor` named a feature this car does not have (`AC_COMPRESSOR_STATE`); it is `AC_COMPRESSOR_MODE`.
+- **Fixed a build break from the rebase:** taking upstream's `ReflectionVehicleController` whole dropped this
+  edition's `CAR_STATUS` branch, so `read_car` had nowhere to go and the app would not compile. Restored.
