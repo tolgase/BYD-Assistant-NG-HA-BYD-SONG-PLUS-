@@ -85,6 +85,7 @@ fun AssistantLanguage.label(): String = stringResource(
         AssistantLanguage.ARABIC -> R.string.language_arabic
         AssistantLanguage.RUSSIAN -> R.string.language_russian
         AssistantLanguage.POLISH -> R.string.language_polish
+        AssistantLanguage.FRENCH -> R.string.language_french
     },
 )
 
@@ -96,6 +97,7 @@ fun ArabicDialect.label(): String = stringResource(
         ArabicDialect.EGYPTIAN -> R.string.dialect_egyptian
         ArabicDialect.LEVANTINE -> R.string.dialect_levantine
         ArabicDialect.MAGHREBI -> R.string.dialect_maghrebi
+        ArabicDialect.TUNISIAN -> R.string.dialect_tunisian
         ArabicDialect.MODERN_STANDARD -> R.string.dialect_msa
     },
 )

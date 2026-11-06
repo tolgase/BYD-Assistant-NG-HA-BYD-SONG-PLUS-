@@ -75,6 +75,12 @@ class SettingsViewModel @Inject constructor(
 
     private fun text(id: Int, vararg args: Any): String = AppLanguage.string(context, id, *args)
 
+    val identity: StateFlow<com.bydassistantng.data.AssistantIdentity> = preferencesRepository.identity
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.bydassistantng.data.AssistantIdentity())
+    fun setIdentity(identity: com.bydassistantng.data.AssistantIdentity) {
+        viewModelScope.launch { preferencesRepository.setIdentity(identity) }
+    }
+
     val language: StateFlow<AssistantLanguage> = preferencesRepository.assistantLanguage
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AssistantLanguage.AUTO)
     val vehicleControlEnabled: StateFlow<Boolean> = preferencesRepository.vehicleControlEnabled

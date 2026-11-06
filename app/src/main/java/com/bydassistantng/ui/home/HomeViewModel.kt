@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
@@ -52,7 +53,7 @@ class HomeViewModel @Inject constructor(
     private val conversationController: ConversationController,
     private val liveConversationController: LiveConversationController,
     private val ttsEngine: TextToSpeechEngine,
-    preferencesRepository: PreferencesRepository,
+    private val preferencesRepository: PreferencesRepository,
     private val updateManager: UpdateManager,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
@@ -63,6 +64,16 @@ class HomeViewModel @Inject constructor(
         preferencesRepository.vehicleControlEnabled.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CoreFeatures.VEHICLE_CONTROL_DEFAULT)
 
     val updateState: StateFlow<UpdateState> = updateManager.state
+
+    /** Song PLUS edition: true until the user has seen the naming question once (installs that skipped setup's step). */
+    val askNames: StateFlow<Boolean> = preferencesRepository.namesAsked.map { !it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+    fun saveNames(identity: com.bydassistantng.data.AssistantIdentity) {
+        viewModelScope.launch { preferencesRepository.setIdentity(identity) }
+    }
+    fun skipNames() {
+        viewModelScope.launch { preferencesRepository.markNamesAsked() }
+    }
 
     /** The version just installed, until the note about it is dismissed. */
     val justUpdatedTo: StateFlow<String?> = updateManager.justUpdatedTo

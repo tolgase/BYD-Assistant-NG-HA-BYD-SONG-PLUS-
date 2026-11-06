@@ -451,4 +451,26 @@
     <string name="voice_speaker_headrest_note">Gdy rozmawiasz z asystentem, dźwięk zagłówka w samochodzie jest ustawiany na Interaktywny, a głos gra kanałem nawigacji samochodu, więc słychać go tylko z zagłówka kierowcy. Potem dźwięk zagłówka wraca do poprzedniego ustawienia. Muzyka zostaje w głośnikach samochodu. Głośność ustawia się poniżej, w sekcji Głośność. Wymaga debugowania ADB, tak jak sterowanie samochodem.</string>
     <string name="log_share_failed">Nie udało się udostępnić dziennika.</string>
     <string name="log_showing_newest">Pokazano najnowsze %1$d z %2$d znaków; starsze wiersze pominięto.</string>
+    <string name="language_french">Francuski</string>
+    <string name="dialect_tunisian">Tunezyjski (dardża)</string>
+    <string name="banner_car_status">Odczyt stanu auta</string>
+    <string name="banner_scene">Scena: %1$s</string>
+    <string name="quick_listening">Offline: powiedz polecenie</string>
+    <string name="quick_not_heard">Nic nie słychać</string>
+    <string name="quick_not_command">Offline, to nie polecenie: %1$s</string>
+    <!-- Song PLUS edition: names -->
+    <string name="names_title">Imiona</string>
+    <string name="setup_name_names">Imiona</string>
+    <string name="names_setup_body">Nadaj asystentowi imię i powiedz, jak nazywasz samochód i jak ma się do ciebie zwracać. Wszystko opcjonalne, można zmienić później w Ustawieniach.</string>
+    <string name="names_assistant_label">Imię asystenta</string>
+    <string name="names_assistant_example">np. Yasmine</string>
+    <string name="names_car_label">Nazwa samochodu</string>
+    <string name="names_car_example">np. Song</string>
+    <string name="names_driver_label">Twoje imię</string>
+    <string name="names_driver_example">np. Axel</string>
+    <string name="names_note">Asystenta nadal uruchamiasz przyciskiem na kierownicy lub dotknięciem. Nie nasłuchuje stale swojego imienia.</string>
+    <string name="names_row_title">Imiona asystenta i samochodu</string>
+    <string name="names_row_hint">Jak asystent się przedstawia i jak nazywa samochód i ciebie</string>
+    <string name="names_unset">Nie ustawiono</string>
+    <string name="names_later">Później</string>
 </resources>

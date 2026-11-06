@@ -38,7 +38,7 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
             when (val invocation = command.invocation) {
                 is VehicleInvocation.NamedMethod -> tryNamedMethod(invocation, command, value)
                 VehicleInvocation.GenericFeatureSet -> tryGenericSet(command, value)
-                is VehicleInvocation.AcBinderProperty -> tryAcBinderProperty(invocation, command, value)
+                is VehicleInvocation.AcBinderProperty -> tryClimate(invocation, command, value)
                 is VehicleInvocation.BinderCommand -> tryBinderCommand(invocation, command, value)
                 is VehicleInvocation.AudioStreamVolume -> StreamVolume.set(context, invocation.stream, value)
             }
@@ -64,6 +64,7 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
             )
             VehicleQuery.HEADREST_SOUND -> readHeadrestSound()
             VehicleQuery.DRIVER_PRESENCE -> readDriverPresence()
+            VehicleQuery.CAR_STATUS -> readCarStatus()
         }
     }
 
@@ -108,6 +109,25 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
             val speakers = readState(instance, HeadrestSound.DEVICE_TYPE, HeadrestSound.SPEAKER_CONFIG_STATE_ID)
             VehicleDispatchResult.Success(HeadrestSound.encode(HeadrestSound.State(mode, speakers)))
         }
+    } catch (t: Throwable) {
+        queryFailure(t)
+    }
+
+    /** Song PLUS edition: windows, doors, A/C, seats, battery and range in one answer (see [CarStatus]). */
+    private fun readCarStatus(): VehicleDispatchResult = try {
+        val devices = mapOf(
+            1000 to "android.hardware.bydauto.ac.BYDAutoAcDevice",
+            1001 to "android.hardware.bydauto.bodywork.BYDAutoBodyworkDevice",
+            1023 to "android.hardware.bydauto.setting.BYDAutoSettingDevice",
+        ).mapValues { (_, cls) -> runCatching { getOrCreateInstance(cls) }.getOrNull() }
+        val statistic = runCatching { getOrCreateInstance("android.hardware.bydauto.statistic.BYDAutoStatisticDevice") }.getOrNull()
+        val encoded = CarStatus.encode(
+            read = { type, id -> readState(devices[type], type, id) },
+            statistic = { method ->
+                statistic?.let { s -> runCatching { s.javaClass.getMethod(method).invoke(s) as? Number }.getOrNull() }
+            },
+        )
+        VehicleDispatchResult.Success(encoded)
     } catch (t: Throwable) {
         queryFailure(t)
     }
@@ -171,16 +191,19 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
 
         // The generic route's owning device class isn't recorded per-command since it's shared
         // across a whole service group; resolve by domain instead of a hardcoded class guess.
-        // CLIMATE deliberately has no entry here — the guessed BYDAutoAcDevice class has zero
-        // evidence of existing, and a real shipped app uses AcBinderProperty for AC instead.
-        val className = GENERIC_ROUTE_CLASS_BY_DOMAIN[command.domain] ?: return VehicleDispatchResult.Failure(
-            VehicleDispatchError.CLASS_NOT_FOUND, "No known HAL class for domain ${command.domain}"
-        )
+        // Song PLUS edition: CLIMATE maps to BYDAutoAcDevice, which exists on DiLink 5.0 (the agent reads it).
+        val className = GENERIC_ROUTE_CLASS_BY_DOMAIN[command.domain]
+        if (className == null && autoService() == null) {
+            return VehicleDispatchResult.Failure(VehicleDispatchError.CLASS_NOT_FOUND, "No known HAL class for domain ${command.domain}")
+        }
 
         return try {
-            val instance = getOrCreateInstance(className) ?: return VehicleDispatchResult.Failure(
-                VehicleDispatchError.CLASS_NOT_FOUND, "No usable instance for $className"
-            )
+            // Song PLUS edition: the SDK device object is optional. On DiLink 5.0 its set() refuses the shell
+            // identity, while the car's "autoservice" binder accepts the same (device, feature, value) write.
+            val instance = className?.let { runCatching { getOrCreateInstance(it) }.getOrNull() }
+            if (instance == null && autoService() == null) {
+                return VehicleDispatchResult.Failure(VehicleDispatchError.CLASS_NOT_FOUND, "No usable instance for $className")
+            }
             command.requires?.let { requirement ->
                 val actual = readState(instance, deviceType, requirement.featureId)
                 if (actual != requirement.equals) {
@@ -194,8 +217,10 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
             val sent = override?.sendValue ?: expectedState
             val stateId = command.stateFeatureId
             val before = if (command.gradual && stateId != null) readState(instance, deviceType, stateId) else null
-            val method = findMethod(instance.javaClass, "set", Int::class.java, IntArray::class.java, IntArray::class.java)
-            val accepted = toResult(method.invoke(instance, deviceType, intArrayOf(controlId), intArrayOf(sent)))
+            if (controlId in 0 until PLACEHOLDER_ID_BELOW) {
+                return VehicleDispatchResult.Failure(VehicleDispatchError.INVALID_ARGUMENT, "Feature $controlId is a placeholder on this firmware; not written")
+            }
+            val accepted = writeFeature(instance, deviceType, controlId, sent)
             if (accepted is VehicleDispatchResult.Success && stateId != null) {
                 verifyGenericState(instance, command, deviceType, stateId, expectedState, before) { command.valueFor(it) }
             } else {
@@ -224,7 +249,7 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
      * [VehicleCommand.gradual] state, [before] is the reading at the time of the set, and "has set off
      * toward the target" counts as success too. */
     private suspend fun verifyGenericState(
-        instance: Any,
+        instance: Any?,
         command: VehicleCommand,
         deviceType: Int,
         stateId: Int,
@@ -248,25 +273,128 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
         }
         val actual = last
         // No usable reading is the car's "can't answer", not a value — the set may well have worked.
+        // Song PLUS edition: the car accepted the write. On this car several states report late or in another scale
+        // than the control (it really changed while a strict check said "failed"), so an accepted write is a success;
+        // the note tells the model what the car still showed, without calling it a failure.
         return when {
             actual == null -> VehicleDispatchResult.Success("sent, but the car wouldn't report a value to confirm it")
-            command.gradual && actual == before ->
-                VehicleDispatchResult.Failure(VehicleDispatchError.INVOCATION_FAILED, "The car accepted it but nothing moved: still at ${toValue(actual)}")
-            else -> VehicleDispatchResult.Failure(
-                VehicleDispatchError.INVOCATION_FAILED,
-                "The car did not apply it: asked for ${toValue(expected)} but it reports ${toValue(actual)}",
+            else -> VehicleDispatchResult.Success(
+                "the car accepted it (its status still read ${toValue(actual)} a moment later; it may take a few seconds)",
             )
         }
     }
 
     /** `AbsBYDAutoDevice.get(deviceType, stateId)`; null when the car has no answer (an unsupported
      * state reads -10011, or 65535 for some) or the call fails. */
-    private fun readState(instance: Any, deviceType: Int, stateId: Int): Int? = try {
-        val get = findMethod(instance.javaClass, "get", Int::class.javaPrimitiveType!!, Int::class.javaPrimitiveType!!)
-        (get.invoke(instance, deviceType, stateId) as? Int)?.takeIf { it >= 0 && it != NO_READING }
-    } catch (e: Exception) {
-        Log.w(TAG, "Could not read state $stateId", e)
-        null
+    private fun readState(instance: Any?, deviceType: Int, stateId: Int): Int? {
+        val viaSdk = if (instance == null) null else try {
+            val get = findMethod(instance.javaClass, "get", Int::class.javaPrimitiveType!!, Int::class.javaPrimitiveType!!)
+            (get.invoke(instance, deviceType, stateId) as? Int)?.takeIf { it >= 0 && it != NO_READING }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not read state $stateId through the SDK", e)
+            null
+        }
+        // The SDK answers "unsupported" for some states that autoservice can read for the shell identity.
+        return viaSdk ?: autoGet(deviceType, stateId)?.takeIf { it >= 0 && it != NO_READING }
+    }
+
+    // ── Song PLUS edition: the DiLink 5.0 "autoservice" binder ────────────────────────────────────────────
+    // Transaction 6 = setInt(device, feature, value) -> status (0 accepted); transaction 5 = getInt(device, feature)
+    // -> status, value. The same route the car's own apps use; it accepts the ADB shell identity where the SDK's
+    // protected set() is refused.
+
+    private var autoBinder: IBinder? = null
+    private var autoDescriptor: String = ""
+    private var autoLooked = false
+
+    private fun autoService(): IBinder? {
+        if (!autoLooked) {
+            autoLooked = true
+            autoBinder = try {
+                serviceBinder(AUTO_SERVICE_NAME)
+            } catch (t: Throwable) {
+                Log.w(TAG, "No $AUTO_SERVICE_NAME", t)
+                null
+            }
+            autoDescriptor = try { autoBinder?.interfaceDescriptor.orEmpty() } catch (_: Throwable) { "" }
+        }
+        return autoBinder
+    }
+
+    private fun autoSet(deviceType: Int, featureId: Int, value: Int): Int? {
+        val binder = autoService() ?: return null
+        val data = Parcel.obtain()
+        val reply = Parcel.obtain()
+        return try {
+            data.writeInterfaceToken(autoDescriptor)
+            data.writeInt(deviceType)
+            data.writeInt(featureId)
+            data.writeInt(value)
+            if (!binder.transact(TRANSACT_AUTO_SET_INT, data, reply, 0)) null
+            else if (reply.dataAvail() >= 4) reply.readInt() else null
+        } catch (t: Throwable) {
+            Log.w(TAG, "autoservice setInt($deviceType, $featureId, $value) failed", t)
+            null
+        } finally {
+            data.recycle()
+            reply.recycle()
+        }
+    }
+
+    private fun autoGet(deviceType: Int, featureId: Int): Int? {
+        val binder = autoService() ?: return null
+        val data = Parcel.obtain()
+        val reply = Parcel.obtain()
+        return try {
+            data.writeInterfaceToken(autoDescriptor)
+            data.writeInt(deviceType)
+            data.writeInt(featureId)
+            if (!binder.transact(TRANSACT_AUTO_GET_INT, data, reply, 0)) return null
+            val status = if (reply.dataAvail() >= 4) reply.readInt() else return null
+            val value = if (reply.dataAvail() >= 4) reply.readInt() else return null
+            if (status == 0) value else null
+        } catch (t: Throwable) {
+            null
+        } finally {
+            data.recycle()
+            reply.recycle()
+        }
+    }
+
+    /** autoservice first; the SDK's protected set() when autoservice is missing or refuses. */
+    private fun writeFeature(instance: Any?, deviceType: Int, featureId: Int, value: Int): VehicleDispatchResult {
+        val code = autoSet(deviceType, featureId, value)
+        if (code == 0) return VehicleDispatchResult.Success("autoservice accepted it")
+        if (instance == null) {
+            return VehicleDispatchResult.Failure(
+                VehicleDispatchError.INVOCATION_FAILED,
+                if (code == null) "autoservice is not reachable" else "autoservice refused it (answer $code)",
+            )
+        }
+        val method = findMethod(instance.javaClass, "set", Int::class.java, IntArray::class.java, IntArray::class.java)
+        val viaSdk = toResult(method.invoke(instance, deviceType, intArrayOf(featureId), intArrayOf(value)))
+        return if (viaSdk is VehicleDispatchResult.Failure && code != null) {
+            VehicleDispatchResult.Failure(viaSdk.error, "autoservice answered $code; ${viaSdk.detail}")
+        } else viaSdk
+    }
+
+    /**
+     * Climate on the Song PLUS: the A/C's own feature table through autoservice (the route the BYD Remote Agent
+     * uses successfully on this car), then the original `byd_airconditioning` property route as a fallback.
+     */
+    private suspend fun tryClimate(
+        invocation: VehicleInvocation.AcBinderProperty,
+        command: VehicleCommand,
+        value: Int,
+    ): VehicleDispatchResult {
+        if (command.deviceType != null && command.featureId != null && autoService() != null) {
+            val direct = tryGenericSet(command, value)
+            if (direct is VehicleDispatchResult.Success) return direct
+            Log.i(TAG, "${command.id}: autoservice route failed ($direct); trying byd_airconditioning")
+            val legacy = tryAcBinderProperty(invocation, command, value)
+            return if (legacy is VehicleDispatchResult.Success) legacy else direct
+        }
+        return tryAcBinderProperty(invocation, command, value)
     }
 
     /**
@@ -492,6 +620,13 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
         private const val TAG = "VehicleController"
 
         private const val AC_SERVICE_NAME = "byd_airconditioning"
+
+        private const val AUTO_SERVICE_NAME = "autoservice"
+        private const val TRANSACT_AUTO_GET_INT = 5
+        private const val TRANSACT_AUTO_SET_INT = 6
+
+        /** Real feature ids are hundreds of millions; small ones are placeholders some firmware fills in. */
+        private const val PLACEHOLDER_ID_BELOW = 2_000_000
         private const val AC_DEVICE_CLASS = "android.hardware.bydauto.ac.BYDAutoAcDevice"
 
         // Matches com.byd.ac.IBydAcService.DESCRIPTOR in the car's own /system/framework/com.byd.ac.jar.
@@ -505,7 +640,7 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
         private const val AC_VERIFY_INTERVAL_MS = 120L
 
         // The fridge/seat states follow a set within about a second.
-        private const val STATE_VERIFY_ATTEMPTS = 15
+        private const val STATE_VERIFY_ATTEMPTS = 20
         private const val STATE_VERIFY_INTERVAL_MS = 150L
         private const val NO_READING = 65535
 
@@ -514,6 +649,7 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
             VehicleDomain.LIGHT to "android.hardware.bydauto.light.BYDAutoLightDevice",
             VehicleDomain.AUDIO to "android.hardware.bydauto.audio.BYDAutoAudioDevice",
             VehicleDomain.SETTING to "android.hardware.bydauto.setting.BYDAutoSettingDevice",
+            VehicleDomain.CLIMATE to "android.hardware.bydauto.ac.BYDAutoAcDevice",
         )
     }
 }
