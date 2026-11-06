@@ -24,8 +24,16 @@ chmod 600 app/signing.properties
 # The project reads git tags for beta numbering; give it an empty repository.
 [ -d .git ] || docker run --rm -v "$PWD:/src" byd-voice-builder git init -q /src
 
-docker run --rm -v "$PWD:/src" -v byd-voice-gradle:/root/.gradle -v byd-voice-sdk:/opt/android-sdk byd-voice-builder \
-  bash -c 'chmod +x gradlew && ./gradlew --no-daemon --console=plain assembleRelease'
+# Anything given to this script is handed to Gradle, which is how the update server is baked in:
+#   ./build-voice.sh -Passistant.updateUrl=https://host/path/api/app/voice/releases -Passistant.updateToken=<token>
+# The token is printed hidden, so a build line can be pasted into a terminal that is being watched.
+if [ "$#" -gt 0 ]; then
+  echo "Gradle arguments: $(printf '%s\n' "$@" | sed 's/\(-Passistant\.updateToken=\).*/\1<hidden>/' | tr '\n' ' ')"
+fi
+
+docker run --rm -v "$PWD:/src" -v byd-voice-gradle:/root/.gradle -v byd-voice-sdk:/opt/android-sdk \
+  -e ASSISTANT_UPDATE_URL -e ASSISTANT_UPDATE_TOKEN byd-voice-builder \
+  bash -c 'chmod +x gradlew && ./gradlew --no-daemon --console=plain assembleRelease "$@"' gradle "$@"
 
 APK=$(ls -t app/build/outputs/apk/release/*.apk | head -n1)
 cp "$APK" out/byd-assistant-songplus.apk
