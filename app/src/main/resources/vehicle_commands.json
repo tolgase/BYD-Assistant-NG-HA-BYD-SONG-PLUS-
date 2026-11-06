@@ -1670,8 +1670,8 @@
       "nativeFeatureName": "Ac.AC_COMPRESSOR_MODE_SET"
     },
     "stateFeatureId": 1077936137,
-    "featureName": "AC_COMPRESSOR_STATE_SET",
-    "stateFeatureName": "AC_COMPRESSOR_STATE"
+    "featureName": "AC_COMPRESSOR_MODE_SET",
+    "stateFeatureName": "AC_COMPRESSOR_MODE"
   },
   {
     "id": "ac.auto",
