@@ -22,6 +22,7 @@ import com.bydassistantng.audio.LevelGate
 import com.bydassistantng.audio.VoiceSensitivity
 import com.bydassistantng.audio.VoiceSpeaker
 import com.bydassistantng.audio.LivePcmRecorder
+import com.bydassistantng.quick.QuickCommands
 import com.bydassistantng.audio.ExteriorVolume
 import com.bydassistantng.audio.PlaySoundOutsideTool
 import com.bydassistantng.audio.SpeakOutsideTool
@@ -320,6 +321,7 @@ class LiveConversationController @Inject constructor(
     private var musicPlayingNow = false
     private var musicCheckedAtMs = 0L
     private var musicHintForSession = false
+    private var identityForSession = com.bydassistantng.data.AssistantIdentity()
 
     // Between "the detector thinks that's the user" and "it is, cut the reply" / "it isn't, carry on": the
     // reply is turned down and the mic watched. Only touched from the capture thread and the resets below.
@@ -515,6 +517,8 @@ class LiveConversationController @Inject constructor(
             close()
             return false
         }
+        // Song PLUS edition: the driver's first phrase is also heard offline, so a car command is done at once.
+        if (vehicleControlEnabledForSession && opening == null) QuickCommands.beginTap(context, vehicleController)
         awaitHeadrest()
         // The volume before the first tone, not after it: the tone is on the same stream as the voice.
         settleVolume(firstNoise)
@@ -547,6 +551,7 @@ class LiveConversationController @Inject constructor(
      */
     private suspend fun loadSessionSettings(forGreeting: Boolean) {
         languageForSession = preferencesRepository.assistantLanguage.first()
+        identityForSession = preferencesRepository.identity.first()
         AppLogger.log(TAG, "Reply language: $languageForSession")
         vehicleControlEnabledForSession = preferencesRepository.vehicleControlEnabled.first()
         dialectForSession = preferencesRepository.arabicDialect.first()
@@ -746,6 +751,7 @@ class LiveConversationController @Inject constructor(
                         webSearch = webSearchForSession,
                         memory = MemoryContext(tools = longTermForSession, facts = factsForSession, recent = recentForSession),
                         musicHint = musicHintForSession,
+                        identity = identityForSession,
                     ),
                 ),
             ),
@@ -909,6 +915,7 @@ class LiveConversationController @Inject constructor(
 
     /** Called ~every 50ms from the mic's capture thread, whatever the gate. */
     private fun onMicChunk(chunk: ByteArray) {
+        QuickCommands.onLiveChunk(chunk)
         try {
             handleMicChunk(chunk)
         } catch (e: Throwable) {
@@ -1240,6 +1247,7 @@ class LiveConversationController @Inject constructor(
         nextStepJob = null
         doneChimeJob?.cancel()
         doneChimeJob = null
+        QuickCommands.endTap()
         recorder.stop()
         cabinNoise.estimate()?.let { lastNoise = it to SystemClock.elapsedRealtime() }
         cabinNoise.stop()
@@ -1382,6 +1390,7 @@ class LiveConversationController @Inject constructor(
 
         when (event) {
             is LiveEvent.Audio -> withContext(Dispatchers.IO) {
+                QuickCommands.assistantSpeaking()
                 player.playChunk(Base64.decode(event.pcmBase64, Base64.NO_WRAP), playbackEpoch)
             }
             is LiveEvent.OutputTranscript -> {

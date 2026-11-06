@@ -47,6 +47,16 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenUpdates: () -> Unit, viewModel:
     val vehicleControlEnabled by viewModel.vehicleControlEnabled.collectAsState()
     val updateState by viewModel.updateState.collectAsState()
     val justUpdatedTo by viewModel.justUpdatedTo.collectAsState()
+    val askNames by viewModel.askNames.collectAsState()
+    if (askNames) {
+        com.bydassistantng.ui.NamesDialog(
+            initial = com.bydassistantng.data.AssistantIdentity(),
+            title = stringResource(R.string.names_title),
+            dismissLabel = stringResource(R.string.names_later),
+            onSave = { viewModel.saveNames(it) },
+            onDismiss = { viewModel.skipNames() },
+        )
+    }
 
     // Re-checked on every tap rather than remembered: an "only this time" mic grant can lapse
     // while this screen stays composed.

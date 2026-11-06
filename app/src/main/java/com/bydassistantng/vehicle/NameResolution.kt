@@ -27,8 +27,12 @@ internal object NameResolution {
 
     fun resolve(entry: CommandEntryDto, table: Map<String, Int>): Outcome {
         val generic = entry.invocation.type == "genericFeatureSet"
-        // The A/C, the dashcam and the volume use no feature numbers of the car's table.
-        if (!generic && entry.invocation.type != "namedMethod") return Outcome.Use(entry)
+        // The A/C reaches its control through its own binder property, but the numbers it reads the result back with are
+        // the car's own, and they are not the same from line to line: resolve its names too, and never withhold it — a
+        // name this car does not use simply leaves the verified number in place, which is what the entry always used.
+        val acProperty = entry.invocation.type == "acBinderProperty"
+        // The dashcam and the volume use no feature numbers of the car's table.
+        if (!generic && !acProperty && entry.invocation.type != "namedMethod") return Outcome.Use(entry)
 
         val missing = ArrayList<String>()
         fun number(name: String?, fallback: Int): Int {
@@ -38,6 +42,12 @@ internal object NameResolution {
 
         // The precondition belongs to a typed setter as well (the A/C's temperature is only set on a car showing Celsius).
         var result = entry.copy(requires = entry.requires?.let { it.copy(featureId = number(it.featureName, it.featureId)) })
+        if (acProperty) {
+            // Its own numbers, where this car names them; otherwise exactly what the entry held.
+            val write = entry.featureName?.let { table[it] } ?: entry.featureId
+            val state = entry.stateFeatureName?.let { table[it] } ?: entry.stateFeatureId
+            return Outcome.Use(entry.copy(featureId = write, stateFeatureId = state))
+        }
         if (generic) {
             result = result.copy(
                 featureId = entry.featureId?.let { number(entry.featureName, it) },

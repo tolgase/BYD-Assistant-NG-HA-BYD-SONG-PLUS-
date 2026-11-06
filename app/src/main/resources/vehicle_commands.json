@@ -41,7 +41,10 @@
       "stateFeatureName": "Ac.AC_POWER_STATE",
       "nativeFeatureId": 501219364,
       "nativeFeatureName": "Ac.AC_POWER_STATE_SET"
-    }
+    },
+    "stateFeatureId": 1077936144,
+    "featureName": "AC_POWER_STATE_SET",
+    "stateFeatureName": "AC_POWER_STATE"
   },
   {
     "id": "ac.temperature",
@@ -95,7 +98,10 @@
       },
       "nativeFeatureId": 501219368,
       "nativeFeatureName": "Ac.AC_TEMP_MAIN_SET"
-    }
+    },
+    "stateFeatureId": 1077936168,
+    "featureName": "AC_TEMP_MAIN_SET",
+    "stateFeatureName": "AC_TEMP_MAIN"
   },
   {
     "id": "ac.fan",
@@ -138,7 +144,10 @@
       "stateFeatureName": "Ac.AC_WIND_LEVEL",
       "nativeFeatureId": 501219340,
       "nativeFeatureName": "Ac.AC_WIND_LEVEL_SET"
-    }
+    },
+    "stateFeatureId": 1077936156,
+    "featureName": "AC_WIND_LEVEL_SET",
+    "stateFeatureName": "AC_WIND_LEVEL"
   },
   {
     "id": "ac.windMode",
@@ -186,7 +195,10 @@
       "stateFeatureName": "Ac.AC_WIND_MODE",
       "nativeFeatureId": 501219336,
       "nativeFeatureName": "Ac.AC_WIND_MODE_SET"
-    }
+    },
+    "stateFeatureId": 1077936152,
+    "featureName": "AC_WIND_MODE_SET",
+    "stateFeatureName": "AC_WIND_MODE"
   },
   {
     "id": "window.driver",
@@ -678,52 +690,40 @@
     "labelAr": "لون الإضاءة المحيطة",
     "labelRu": "Цвет подсветки салона",
     "labelPl": "Kolor oświetlenia nastrojowego",
-    "labelId": "Warna lampu ambient",
     "deviceType": 1023,
     "invocation": {
-      "type": "namedMethod",
-      "deviceClass": "setting",
-      "methodName": "setIALColor",
-      "paramTypes": [
-        "int",
-        "int",
-        "int"
-      ],
-      "argsTemplate": [
-        3,
-        null,
-        1
-      ]
+      "type": "genericFeatureSet"
     },
     "parameter": {
       "type": "fixedEnum",
       "options": {
-        "pink": 4,
-        "magenta": 4,
-        "purple": 8,
-        "dark_blue": 12,
-        "blue": 16,
-        "sky_blue": 24,
-        "cyan": 32,
-        "mint": 48,
-        "light_green": 52,
-        "green": 56,
-        "lime": 64,
-        "yellow": 80,
-        "gold": 84,
-        "amber": 88,
-        "orange": 92,
-        "deep_orange": 96,
-        "red": 104,
-        "crimson": 108,
-        "coral": 112,
-        "warm_white": 116,
-        "cold_white": 124,
-        "ice_blue": 127
+        "pink": 1,
+        "purple": 2,
+        "dark_blue": 3,
+        "blue": 4,
+        "sky_blue": 6,
+        "cyan": 8,
+        "mint": 12,
+        "light_green": 13,
+        "green": 14,
+        "lime": 16,
+        "yellow": 20,
+        "gold": 21,
+        "amber": 22,
+        "orange": 23,
+        "deep_orange": 24,
+        "red": 26,
+        "crimson": 27,
+        "coral": 28,
+        "warm_white": 29,
+        "cold_white": 31
       }
     },
     "stateFeatureId": 1121976336,
-    "stateFeatureName": "Setting.SET_IAL_FRONT_COLOR"
+    "featureId": 1069547528,
+    "labelId": "Warna lampu ambient",
+    "featureName": "SET_INTERIOR_ATMOSPHERE_LAMP_COLOR_SET",
+    "stateFeatureName": "SET_IAL_FRONT_COLOR"
   },
   {
     "id": "ambient.brightness",
@@ -733,31 +733,20 @@
     "labelAr": "سطوع الإضاءة المحيطة",
     "labelRu": "Яркость подсветки салона",
     "labelPl": "Jasność oświetlenia nastrojowego",
-    "labelId": "Kecerahan lampu ambient",
     "deviceType": 1023,
     "invocation": {
-      "type": "namedMethod",
-      "deviceClass": "setting",
-      "methodName": "setIALBrightness",
-      "paramTypes": [
-        "int",
-        "int",
-        "int"
-      ],
-      "argsTemplate": [
-        3,
-        null,
-        1
-      ]
+      "type": "genericFeatureSet"
     },
     "parameter": {
       "type": "range",
       "min": 1,
-      "max": 6
+      "max": 10
     },
-    "valueOffset": -1,
     "stateFeatureId": 1121976328,
-    "stateFeatureName": "Setting.SET_IAL_FRONT_BRIGHTNESS"
+    "featureId": 1069547536,
+    "labelId": "Kecerahan lampu ambient",
+    "featureName": "SET_INTERIOR_ATMOSPHERE_LAMP_BRIGHTNESS_SET",
+    "stateFeatureName": "SET_IAL_FRONT_BRIGHTNESS"
   },
   {
     "id": "ambient.dynamic",
@@ -1550,7 +1539,7 @@
     "labelPl": "Źródło powietrza",
     "labelId": "Sumber udara (sirkulasi)",
     "deviceType": 1000,
-    "featureId": 1077936148,
+    "featureId": 501219355,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1583,7 +1572,10 @@
       "stateFeatureName": "Ac.AC_CYCLE_MODE",
       "nativeFeatureId": 501219355,
       "nativeFeatureName": "Ac.AC_CYCLE_MODE_SET"
-    }
+    },
+    "stateFeatureId": 1077936148,
+    "featureName": "AC_CYCLE_MODE_SET",
+    "stateFeatureName": "AC_CYCLE_MODE"
   },
   {
     "id": "ac.ventilation",
@@ -1595,7 +1587,7 @@
     "labelPl": "Wentylacja klimatyzacji",
     "labelId": "Ventilasi AC",
     "deviceType": 1000,
-    "featureId": 1314914314,
+    "featureId": 501219394,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1628,7 +1620,10 @@
       "stateFeatureName": "Ac.AC_VENTILATION_STATE",
       "nativeFeatureId": 501219394,
       "nativeFeatureName": "Ac.AC_VENTILATION_STATE_SET"
-    }
+    },
+    "stateFeatureId": 1314914314,
+    "featureName": "AC_VENTILATION_STATE_SET",
+    "stateFeatureName": "AC_VENTILATION_STATE"
   },
   {
     "id": "ac.compressor",
@@ -1640,7 +1635,7 @@
     "labelPl": "Chłodzenie klimatyzacji",
     "labelId": "Pendinginan AC",
     "deviceType": 1000,
-    "featureId": 1077936137,
+    "featureId": 501219344,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1673,7 +1668,10 @@
       "stateFeatureName": "Ac.AC_COMPRESSOR_MODE",
       "nativeFeatureId": 501219344,
       "nativeFeatureName": "Ac.AC_COMPRESSOR_MODE_SET"
-    }
+    },
+    "stateFeatureId": 1077936137,
+    "featureName": "AC_COMPRESSOR_STATE_SET",
+    "stateFeatureName": "AC_COMPRESSOR_STATE"
   },
   {
     "id": "ac.auto",
@@ -1685,7 +1683,7 @@
     "labelPl": "Tryb automatyczny klimatyzacji",
     "labelId": "Mode otomatis AC",
     "deviceType": 1000,
-    "featureId": 1077936146,
+    "featureId": 501219352,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1717,7 +1715,10 @@
       "stateFeatureName": "Ac.AC_CTRL_MODE",
       "nativeFeatureId": 501219352,
       "nativeFeatureName": "Ac.AC_CTRL_MODE_SET"
-    }
+    },
+    "stateFeatureId": 1077936146,
+    "featureName": "AC_CTRL_MODE_SET",
+    "stateFeatureName": "AC_CTRL_MODE"
   },
   {
     "id": "ac.frontDefrost",
@@ -1729,7 +1730,7 @@
     "labelPl": "Odmrażanie szyby przedniej",
     "labelId": "Defrost kaca depan",
     "deviceType": 1000,
-    "featureId": 1077936150,
+    "featureId": 501219362,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1764,7 +1765,10 @@
       "stateFeatureName": "Ac.AC_DEFROST_FRONT_STATE",
       "nativeFeatureId": 501219362,
       "nativeFeatureName": "Ac.AC_DEFROST_FRONT_STATE_SET"
-    }
+    },
+    "stateFeatureId": 1077936150,
+    "featureName": "AC_DEFROST_FRONT_STATE_SET",
+    "stateFeatureName": "AC_DEFROST_FRONT_STATE"
   },
   {
     "id": "ac.rearDefrost",
@@ -1776,7 +1780,7 @@
     "labelPl": "Odmrażanie szyby tylnej",
     "labelId": "Defrost kaca belakang",
     "deviceType": 1000,
-    "featureId": 1128267825,
+    "featureId": 501219357,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1811,6 +1815,9 @@
       "stateFeatureName": "Ac.AC_DEFROST_REAR_STATE",
       "nativeFeatureId": 501219357,
       "nativeFeatureName": "Ac.AC_DEFROST_REAR_STATE_SET"
-    }
+    },
+    "stateFeatureId": 1128267825,
+    "featureName": "AC_DEFROST_REAR_STATE_SET",
+    "stateFeatureName": "AC_DEFROST_REAR_STATE"
   }
 ]

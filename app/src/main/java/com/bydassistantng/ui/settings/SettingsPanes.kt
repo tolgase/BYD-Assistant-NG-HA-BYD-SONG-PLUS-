@@ -69,6 +69,17 @@ internal fun AssistantPane(viewModel: SettingsViewModel) {
     var showDialectChoice by remember { mutableStateOf(false) }
     var showVoiceChoice by remember { mutableStateOf(false) }
     var showApiKey by remember { mutableStateOf(false) }
+    val identity by viewModel.identity.collectAsState()
+    var showNames by remember { mutableStateOf(false) }
+    if (showNames) {
+        com.bydassistantng.ui.NamesDialog(
+            initial = identity,
+            title = stringResource(R.string.names_title),
+            dismissLabel = stringResource(R.string.action_close),
+            onSave = { viewModel.setIdentity(it); showNames = false },
+            onDismiss = { showNames = false },
+        )
+    }
 
     if (showLanguageChoice) {
         ChoiceDialog(
@@ -141,6 +152,17 @@ internal fun AssistantPane(viewModel: SettingsViewModel) {
                             )
                         }
                     },
+                )
+            }
+        }
+        SettingsSection(stringResource(R.string.names_title)) {
+            row {
+                val unset = stringResource(R.string.names_unset)
+                ChoiceSetting(
+                    title = stringResource(R.string.names_row_title),
+                    subtitle = stringResource(R.string.names_row_hint),
+                    value = listOf(identity.assistant, identity.car).map { it.ifBlank { unset } }.joinToString(" · "),
+                    onClick = { showNames = true },
                 )
             }
         }

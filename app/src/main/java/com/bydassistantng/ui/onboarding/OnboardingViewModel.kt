@@ -48,6 +48,11 @@ class OnboardingViewModel @Inject constructor(
         viewModelScope.launch { preferencesRepository.markAutoStartVisited() }
     }
 
+    private val _identity = MutableStateFlow(com.bydassistantng.data.AssistantIdentity())
+    /** The names typed in setup; saved when setup finishes (blank ones simply stay unset). */
+    val identity: StateFlow<com.bydassistantng.data.AssistantIdentity> = _identity.asStateFlow()
+    fun setIdentity(identity: com.bydassistantng.data.AssistantIdentity) { _identity.value = identity }
+
     fun saveApiKeyAndFinish(apiKey: String, onFinished: () -> Unit) {
         if (apiKey.isBlank()) {
             _errorMessage.value = AppLanguage.string(context, R.string.onb_enter_key)
@@ -59,6 +64,7 @@ class OnboardingViewModel @Inject constructor(
                 _errorMessage.value = AppLanguage.string(context, R.string.api_save_failed)
                 return@launch
             }
+            preferencesRepository.setIdentity(_identity.value)
             preferencesRepository.setOnboardingCompleted(true)
             onFinished()
         }

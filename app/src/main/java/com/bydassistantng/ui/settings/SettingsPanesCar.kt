@@ -163,6 +163,9 @@ internal fun CarPane(viewModel: SettingsViewModel, wheelSetup: WheelServiceSetup
             }
         }
 
+        // Song PLUS edition: offline instant car commands.
+        com.bydassistantng.quick.QuickCommandsSettings()
+
         SettingsSection(stringResource(R.string.wheel_title)) {
             row {
                 val subtitle = when {

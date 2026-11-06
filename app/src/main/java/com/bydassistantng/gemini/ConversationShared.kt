@@ -13,10 +13,13 @@ import com.bydassistantng.memory.MemoryFacts
 import com.bydassistantng.memory.RecentExchanges
 import com.bydassistantng.memory.RememberTool
 import com.bydassistantng.data.ArabicDialect
+import com.bydassistantng.data.AssistantIdentity
 import com.bydassistantng.data.AssistantLanguage
 import com.bydassistantng.media.MediaControlTool
 import com.bydassistantng.media.PlayMediaTool
 import com.bydassistantng.navigation.NavigationTool
+import com.bydassistantng.quick.QuickCommands
+import com.bydassistantng.quick.SceneTool
 import com.bydassistantng.util.AppLanguage
 import com.bydassistantng.util.AppLogger
 import com.bydassistantng.vehicle.LoggingVehicleController
@@ -93,6 +96,7 @@ fun assistantTools(
         addAll(VehicleCommandRegistry.functionDeclarations(carLink = vehicleControlEnabled))
         if (vehicleControlEnabled) {
             add(ReadCarTool.declaration)
+            add(SceneTool.declaration)
             add(PassengerScreenTool.declaration)
             // Needs a build that can switch the exterior speaker, and counts as controlling the car.
             if (conversation && exteriorSpeaker) {
@@ -157,6 +161,10 @@ object VehicleFunctionDispatcher {
             return MediaControlTool.handle(context, functionCall)
         }
 
+        if (functionCall.name == SceneTool.FUNCTION_NAME) {
+            return SceneTool.handle(context, functionCall, reflectionController, vehicleControlEnabled, onDispatching)
+        }
+
         if (functionCall.name == ReadCarTool.FUNCTION_NAME) {
             return readCar(functionCall, vehicleControlEnabled, reflectionController, context, onDispatching)
         }
@@ -214,7 +222,10 @@ object VehicleFunctionDispatcher {
                 vehicleControlEnabled -> reflectionController
                 else -> LoggingVehicleController
             }
-            repeatGuard.dispatch(command.id, resolvedValue) {
+            // Song PLUS edition: the offline layer may already have done this, from the same words, a moment ago.
+            if (QuickCommands.wasJustDone(command.id, resolvedValue)) {
+                VehicleDispatchResult.Success("Already done instantly from the driver's words. Do not send it again; tell the user it is done.")
+            } else repeatGuard.dispatch(command.id, resolvedValue) {
                 try {
                     controller.dispatch(command, resolvedValue)
                 } catch (e: IllegalStateException) {
@@ -247,6 +258,7 @@ object VehicleFunctionDispatcher {
             ReadCarTool.What.OUTSIDE_TEMPERATURE -> R.string.banner_outside_temperature
             ReadCarTool.What.INSIDE_TEMPERATURE -> R.string.banner_inside_temperature
             ReadCarTool.What.AIR_QUALITY -> R.string.banner_air_quality
+            ReadCarTool.What.STATUS -> R.string.banner_car_status
         }
         onDispatching(AppLanguage.string(context, banner))
         if (!vehicleControlEnabled) {
@@ -308,11 +320,12 @@ fun voiceAssistantSystemPrompt(
     webSearch: Boolean = false,
     memory: MemoryContext = MemoryContext(),
     musicHint: Boolean = false,
+    identity: AssistantIdentity = AssistantIdentity(),
 ): String {
     // A fixed language is a firm rule and is said twice (here and again at the very end): a model that listens in many
     // languages, and was told only once, tends to answer in whichever it heard, which an unclear word can make the wrong one.
     val languageInstruction = when (language) {
-        AssistantLanguage.AUTO -> "Reply in whichever language the user spoke — English, Arabic, Russian, Polish or Indonesian."
+        AssistantLanguage.AUTO -> "Reply in whichever language the user spoke — English, French, Arabic (including Tunisian Derja), Russian, Polish or Indonesian."
         AssistantLanguage.ENGLISH ->
             "Always reply in English. This is a firm rule: whatever language the user speaks, or seems to speak " +
                 "(Arabic, Russian, Polish, Indonesian, Spanish, anything else), your reply is in English."
@@ -324,10 +337,13 @@ fun voiceAssistantSystemPrompt(
                 "(English, Arabic, Polish, Indonesian, Spanish, anything else), your reply is in Russian."
         AssistantLanguage.POLISH ->
             "Always reply in Polish. This is a firm rule: whatever language the user speaks, or seems to speak " +
-                "(English, Arabic, Russian, Indonesian, Spanish, anything else), your reply is in Polish."
+                "(English, Arabic, Russian, French, Indonesian, Spanish, anything else), your reply is in Polish."
         AssistantLanguage.INDONESIAN ->
             "Always reply in Indonesian. This is a firm rule: whatever language the user speaks, or seems to speak " +
                 "(English, Arabic, Russian, Polish, Malay, anything else), your reply is in Indonesian."
+        AssistantLanguage.FRENCH ->
+            "Always reply in French. This is a firm rule: whatever language the user speaks, or seems to speak " +
+                "(English, Arabic, Tunisian Derja, Russian, anything else), your reply is in French."
     }
     val languageReminder = when (language) {
         AssistantLanguage.AUTO -> ""
@@ -346,6 +362,9 @@ fun voiceAssistantSystemPrompt(
         AssistantLanguage.INDONESIAN ->
             " Remember: every reply is in Indonesian, whatever language you think you heard. If you could not make out " +
                 "what was said, ask the user in Indonesian to say it again."
+        AssistantLanguage.FRENCH ->
+            " Remember: every reply is in French, whatever language you think you heard. If you could not make out " +
+                "what was said, ask the user in French to say it again."
     }
     // Only said when it can matter: an assistant fixed to English or Russian never speaks Arabic.
     val dialectInstruction = dialect.promptName
@@ -363,10 +382,15 @@ fun voiceAssistantSystemPrompt(
     // The speech recognizer behind the Live API can't be told which language to expect (the native-audio
     // models choose it themselves), so say it here: what this user speaks, and what they mostly ask about,
     // so an unclear word is heard as the car command it most likely was.
-    val listeningHint = " The user speaks Arabic (in any dialect), Russian, Polish, Indonesian and English, and sometimes mixes " +
-        "them in one sentence. Most requests are about the car — windows, seats (heating, ventilation, massage), " +
-        "the fridge, the A/C, lights, tyre pressure, navigation, music — so when a word is unclear, prefer the reading that is a " +
-        "car or assistant request over an unrelated phrase."
+    val listeningHint = " The user speaks Tunisian Arabic (Derja), French, standard Arabic and English, and often mixes " +
+        "them in one sentence the Tunisian way (e.g. \"sakker el fenêtre\", \"cha3el el clim\", \"7ell el coffre\"): " +
+        "sakker/سكّر = close, 7ell/حلّ = open, cha3el/شعّل = switch on, tafi/طفّي = switch off, clim/climatiseur = A/C, " +
+        "bellar/blar/بلّار = window glass, coffre/كوفر = trunk, karhba/كرهبة = car, kursi/كرسي = seat. " +
+        "Most requests are about the car — windows, seats (heating, ventilation), the A/C, ambient light, tyre pressure, " +
+        "range and battery, navigation, music — so when a word is unclear, prefer the reading that is a car or assistant " +
+        "request over an unrelated phrase. For several car settings at once (\"I'm hot\", \"close everything\"), " +
+        "use run_scene when a scene fits. For any question about the car's current state (what is open, battery, " +
+        "range, A/C, doors), call read_car with what=status before answering."
     val searchInstruction = if (webSearch) {
         " For questions about current information — news, weather, sports results, prices, opening hours — " +
             "use Google Search, then answer in one or two spoken sentences without reading out links or sources."
@@ -389,7 +413,7 @@ fun voiceAssistantSystemPrompt(
         " Music may be playing in the car. Sung words and other music are not the driver speaking to you: ignore them, and " +
             "answer only when a person speaks to you."
     } else ""
-    return "You are a concise voice assistant built into a car's head unit. $languageInstruction$dialectInstruction$indonesianInstruction " +
+    return "${identity.promptOpening()} $languageInstruction$dialectInstruction$indonesianInstruction " +
         "Keep replies short — they will be read aloud.$listeningHint When the user asks to be taken somewhere, call " +
         "navigate_to with the place name instead of describing the route. When the user asks to open an app, call " +
         "open_app, and to close or quit an app, call close_app; for play, pause, next or previous on the music, " +
@@ -431,6 +455,8 @@ object ReplyLanguage {
             AssistantLanguage.POLISH -> arabic == 0 && cyrillic == 0
             // Indonesian is written in plain Latin letters, so, as with Polish, only another script rules it out.
             AssistantLanguage.INDONESIAN -> arabic == 0 && cyrillic == 0
+            // French is Latin script too: only a reply in another script is certainly not French.
+            AssistantLanguage.FRENCH -> arabic == 0 && cyrillic == 0
         }
     }
 }

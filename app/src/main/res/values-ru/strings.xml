@@ -460,4 +460,26 @@
     <string name="log_hide_private">Скрыть личные данные</string>
     <string name="log_hide_private_on">Сказанное и запрошенное вами, места, названия песен, ключи, адреса почты, номера телефонов и сетевые адреса заменяются здесь, в том, чем вы делитесь, и в том, что сохраняете.</string>
     <string name="log_hide_private_off">Показан весь журнал. В нём есть то, что вы говорили и о чём просили. Делитесь им только с теми, кому доверяете.</string>
+    <string name="language_french">Французский</string>
+    <string name="dialect_tunisian">Тунисский (дарджа)</string>
+    <string name="banner_car_status">Считываю состояние машины</string>
+    <string name="banner_scene">Сцена: %1$s</string>
+    <string name="quick_listening">Офлайн: скажите команду</string>
+    <string name="quick_not_heard">Ничего не слышно</string>
+    <string name="quick_not_command">Офлайн, не команда: %1$s</string>
+    <!-- Song PLUS edition: names -->
+    <string name="names_title">Имена</string>
+    <string name="setup_name_names">Имена</string>
+    <string name="names_setup_body">Дайте ассистенту имя и скажите, как вы называете машину и как обращаться к вам. Всё необязательно, можно изменить позже в настройках.</string>
+    <string name="names_assistant_label">Имя ассистента</string>
+    <string name="names_assistant_example">напр. Ясмина</string>
+    <string name="names_car_label">Имя машины</string>
+    <string name="names_car_example">напр. Сонг</string>
+    <string name="names_driver_label">Ваше имя</string>
+    <string name="names_driver_example">напр. Аксель</string>
+    <string name="names_note">Ассистент по-прежнему запускается кнопкой на руле или касанием. Он не слушает своё имя постоянно.</string>
+    <string name="names_row_title">Имена ассистента и машины</string>
+    <string name="names_row_hint">Как ассистент представляется и как называет машину и вас</string>
+    <string name="names_unset">Не задано</string>
+    <string name="names_later">Позже</string>
 </resources>

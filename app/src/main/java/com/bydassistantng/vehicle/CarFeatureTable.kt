@@ -25,6 +25,18 @@ internal object CarFeatureTable {
         }
         collect(ids, "")
         for (group in ids.declaredClasses) collect(group, group.simpleName + ".")
+        // A bare name as well, for a constant that sits in exactly one group. A registry entry may then name a feature
+        // without knowing which group this firmware files it under (the climate constants are not in the same group on
+        // every line), and an ambiguous name — the same constant in two groups — keeps needing its group.
+        val bare = HashMap<String, MutableList<Int>>()
+        for (group in ids.declaredClasses) {
+            for (field in constantsOf(group)) {
+                field.isAccessible = true
+                val value = (field.get(null) as? Number)?.toLong() ?: continue
+                if (value in Int.MIN_VALUE..Int.MAX_VALUE) bare.getOrPut(field.name) { ArrayList() } += value.toInt()
+            }
+        }
+        for ((name, values) in bare) if (values.distinct().size == 1) table.putIfAbsent(name, values[0])
         table
     } catch (_: Throwable) {
         null

@@ -11,6 +11,10 @@ import android.view.accessibility.AccessibilityEvent
 import com.bydassistantng.audio.AudioRecorder
 import com.bydassistantng.audio.Earcon
 import com.bydassistantng.audio.Earcons
+import com.bydassistantng.audio.LivePcmRecorder
+import com.bydassistantng.quick.QuickCommands
+import com.bydassistantng.quick.QuickParser
+import com.bydassistantng.vehicle.ShellHelperVehicleController
 import com.bydassistantng.audio.VoiceSpeaker
 import com.bydassistantng.audio.TextToSpeechEngine
 import com.bydassistantng.data.PreferencesRepository
@@ -67,6 +71,9 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
     @Inject lateinit var liveConversationController: LiveConversationController
     @Inject lateinit var ttsEngine: TextToSpeechEngine
     @Inject lateinit var earcons: Earcons
+    // Song PLUS edition: offline instant commands.
+    @Inject lateinit var quickRecorder: LivePcmRecorder
+    @Inject lateinit var vehicleController: ShellHelperVehicleController
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val handler = Handler(Looper.getMainLooper())
@@ -87,6 +94,8 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
         super.onServiceConnected()
         instance = this
         scope.launch { preferencesRepository.triggerKeyCode.collect { triggerKeyCode = it } }
+        // Load the offline speech model now, so the first command does not wait for it.
+        QuickCommands.warmUp(this)
         AppLogger.log(TAG, "Connected, watching key $triggerKeyCode")
     }
 
@@ -209,6 +218,13 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
                 return@launch
             }
 
+            // Song PLUS edition: no Gemini (no internet, or it could not be reached) — car commands still work offline.
+            if (QuickCommands.isReady(this@WheelKeyService) && preferencesRepository.vehicleControlEnabled.first()) {
+                AppLogger.log(TAG, "Live unavailable (${liveConversationController.lastStartFailure}) — offline instant commands")
+                runOfflineTurn()
+                return@launch
+            }
+
             // Some failures have an answer the classic pipeline can't improve on — it needs the same
             // internet and key, and would first record 15 seconds of the user talking before saying so.
             val failure = liveConversationController.lastStartFailure
@@ -235,6 +251,28 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
             earcons.play(Earcon.LISTENING)
             banner.show(BannerMode.LISTENING, labelOverride = text(R.string.banner_listening_press_to_stop))
         }
+    }
+
+    /** One offline car command: listen, recognise on the car, do it, and show what was done on the banner. */
+    private suspend fun runOfflineTurn() {
+        earcons.play(Earcon.LISTENING)
+        banner.show(BannerMode.LISTENING, labelOverride = text(R.string.quick_listening))
+        val heard = QuickCommands.listenOnce(this, quickRecorder)
+        if (heard.isNullOrBlank()) {
+            earcons.play(Earcon.ERROR)
+            banner.show(BannerMode.ERROR, labelOverride = text(R.string.quick_not_heard), shownMs = 4_000)
+            return
+        }
+        val plan = QuickParser.parse(heard)
+        if (plan == null) {
+            earcons.play(Earcon.OFFLINE)
+            banner.show(BannerMode.ERROR, labelOverride = text(R.string.quick_not_command, heard), shownMs = 5_000)
+            return
+        }
+        banner.show(BannerMode.THINKING, labelOverride = heard)
+        val outcome = QuickCommands.execute(this, plan, vehicleController)
+        earcons.play(if (outcome.ok) Earcon.DONE else Earcon.ERROR)
+        banner.show(if (outcome.ok) BannerMode.SPEAKING else BannerMode.ERROR, labelOverride = outcome.summary, shownMs = 5_000)
     }
 
     private fun runClassicTurn(file: File) {

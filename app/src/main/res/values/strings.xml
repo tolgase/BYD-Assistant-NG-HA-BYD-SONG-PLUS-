@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">BYD Assistant NG</string>
+    <string name="app_name" translatable="false">BYD Assistant NG (Song PLUS)</string>
     <string name="wheel_key_service_name">BYD Assistant NG steering-wheel button</string>
     <string name="wheel_key_service_description">Lets BYD Assistant NG start listening when you press the microphone button on the steering wheel. It only watches that one button; it does not read the screen or anything you type.</string>
 
@@ -461,4 +461,26 @@
     <string name="log_hide_private">Hide private info</string>
     <string name="log_hide_private_on">What you said and asked for, places, song names, keys, e-mail addresses, phone numbers and network addresses are replaced here, in what you share and in what you save.</string>
     <string name="log_hide_private_off">The whole log is shown. It includes what you said and asked for. Share it only with people you trust.</string>
+    <string name="language_french">French</string>
+    <string name="dialect_tunisian">Tunisian (Derja)</string>
+    <string name="banner_car_status">Reading the car status</string>
+    <string name="banner_scene">Scene: %1$s</string>
+    <string name="quick_listening">Offline: say a car command</string>
+    <string name="quick_not_heard">Nothing heard</string>
+    <string name="quick_not_command">Offline, not a car command: %1$s</string>
+    <!-- Song PLUS edition: names -->
+    <string name="names_title">Names</string>
+    <string name="setup_name_names">Names</string>
+    <string name="names_setup_body">Give your assistant a name, and tell it what you call your car and what to call you. All three are optional and can be changed later in Settings.</string>
+    <string name="names_assistant_label">Assistant\'s name</string>
+    <string name="names_assistant_example">e.g. Yasmine</string>
+    <string name="names_car_label">Your car\'s name</string>
+    <string name="names_car_example">e.g. the Song, Lbayda</string>
+    <string name="names_driver_label">Your name</string>
+    <string name="names_driver_example">e.g. Axel</string>
+    <string name="names_note">You still start the assistant with the steering-wheel button or a tap. It doesn\'t listen for its name all the time.</string>
+    <string name="names_row_title">Assistant and car names</string>
+    <string name="names_row_hint">How the assistant introduces itself, and what it calls the car and you</string>
+    <string name="names_unset">Not set</string>
+    <string name="names_later">Later</string>
 </resources>
