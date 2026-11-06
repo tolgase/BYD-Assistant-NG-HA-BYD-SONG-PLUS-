@@ -103,6 +103,11 @@ object VehicleShellHelper {
         VehicleCommandRegistry.platform = platform
         VehicleCommandRegistry.useAcRoute(acRoute)
         VehicleCommandRegistry.useCarTable(table)
+        // Last, because it reads the states of the commands this car kept: the ones the car names but has no hardware for
+        // answer "not fitted", and offering those would tell the user the car took a command it never had.
+        val notFitted = runCatching { NotFittedCheck.read(VehicleCommandRegistry.known, NativeAutoservice.connect()) }
+            .getOrDefault(emptySet())
+        if (notFitted.isNotEmpty()) VehicleCommandRegistry.useReportedUnavailable(notFitted)
         return Seen(platform, readings, properties, table, acRoute)
     }
 

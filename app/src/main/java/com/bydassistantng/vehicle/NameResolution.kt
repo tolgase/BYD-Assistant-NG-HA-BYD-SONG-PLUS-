@@ -49,8 +49,17 @@ internal object NameResolution {
             return Outcome.Use(entry.copy(featureId = write, stateFeatureId = state))
         }
         if (generic) {
+            // The car's own number for the name wins. An entry may then carry a name and no number at all, which is how a
+            // control is added without writing this car's numbers down: the name is the car-independent fact, and a car
+            // that does not use the name has no number to fall back on, so the command is withheld rather than guessed.
+            val write = when {
+                entry.featureName != null && table[entry.featureName] != null -> table[entry.featureName]
+                entry.featureId != null -> number(entry.featureName, entry.featureId)
+                entry.featureName != null -> null.also { missing += entry.featureName }
+                else -> null
+            }
             result = result.copy(
-                featureId = entry.featureId?.let { number(entry.featureName, it) },
+                featureId = write,
                 overrides = entry.overrides.map { it.copy(featureId = number(it.featureName, it.featureId)) },
             )
         }
