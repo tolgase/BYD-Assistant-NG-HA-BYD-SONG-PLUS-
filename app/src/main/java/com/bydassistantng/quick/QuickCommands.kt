@@ -4,6 +4,7 @@ import android.content.Context
 import com.bydassistantng.audio.LivePcmRecorder
 import com.bydassistantng.util.AppLanguage
 import com.bydassistantng.util.AppLogger
+import com.bydassistantng.util.NetworkState
 import com.bydassistantng.vehicle.InAppVehicleController
 import com.bydassistantng.vehicle.VehicleCommandRegistry
 import com.bydassistantng.vehicle.VehicleController
@@ -47,7 +48,13 @@ sealed interface ModelStatus {
     data class Failed(val message: String) : ModelStatus
 }
 
-data class QuickState(val enabled: Boolean, val language: QuickLanguage, val model: ModelStatus)
+data class QuickState(
+    val enabled: Boolean,
+    val language: QuickLanguage,
+    val model: ModelStatus,
+    /** Run every command on the car and never open a Live conversation, even with internet. */
+    val offlineOnly: Boolean = false,
+)
 
 /** What an offline command did, for the banner: [ok] when every action was accepted. */
 data class QuickOutcome(val ok: Boolean, val summary: String)
@@ -92,6 +99,7 @@ object QuickCommands {
                 modelDir(context, language) != null -> ModelStatus.Ready
                 else -> ModelStatus.Missing
             },
+            offlineOnly = p.getBoolean("offline_only", false),
         )
     }
 
@@ -107,10 +115,33 @@ object QuickCommands {
         if (_state.value.enabled) warmUp(context)
     }
 
+    /** Switches the car off from the network for this feature: every command is recognised and done on the car. */
+    fun setOfflineOnly(context: Context, on: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean("offline_only", on).apply()
+        refresh(context)
+        if (on) warmUp(context)
+    }
+
     /** On and with its model downloaded: offline commands can run. */
     fun isReady(context: Context): Boolean {
         refresh(context)
         return _state.value.enabled && _state.value.model == ModelStatus.Ready
+    }
+
+    /**
+     * Whether this press should be done on the car rather than opening a Live conversation.
+     *
+     * True when offline commands are ready and either the user asked for them always, or there is no usable network.
+     * Android reports a network as validated only once something has actually been reached through it, so a Wi-Fi
+     * dongle that is connected but has no route out reads as no network here — which is the case worth getting right,
+     * since trying Gemini on a dead link costs the driver the connection timeout before anything happens.
+     *
+     * Checked before the attempt, not after it fails: the fallback in [com.bydassistantng.service.WheelKeyService]
+     * still catches a link that looked fine and was not.
+     */
+    fun shouldRunOffline(context: Context): Boolean {
+        if (!isReady(context)) return false
+        return _state.value.offlineOnly || !NetworkState.isOnline(context)
     }
 
     /** Loads the model in the background, so the first command does not wait for it. */

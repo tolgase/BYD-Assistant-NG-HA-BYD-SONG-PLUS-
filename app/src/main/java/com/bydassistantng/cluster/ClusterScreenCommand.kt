@@ -8,6 +8,7 @@ import com.bydassistantng.vehicle.CarFeatureIds
 import com.bydassistantng.vehicle.VehicleDispatchError
 import com.bydassistantng.vehicle.VehicleDispatchResult
 import java.lang.reflect.Method
+import com.bydassistantng.media.FirstResult
 
 /**
  * `cluster <action> ...`: puts one app on the instrument cluster and takes it off again, from the vehicle helper
@@ -45,7 +46,6 @@ internal object ClusterScreenCommand {
     private const val MAP_TYPE_STATE_ID = ClusterScreenParsing.MAP_TYPE_STATE_ID
     private const val MAP_TYPE_CONTROL_ID = ClusterScreenParsing.MAP_TYPE_CONTROL_ID
 
-    private const val YOUTUBE_PACKAGE = "com.google.android.youtube"
 
     private const val COMMAND_TIMEOUT_MS = 5_000L
     private const val ENABLE_WAIT_MS = 8_000L
@@ -360,7 +360,7 @@ internal object ClusterScreenCommand {
         var resumed = false
         repeat(RESTORE_TRIES) {
             Thread.sleep(RESTORE_POLL_MS)
-            if (!expanded && pkg == YOUTUBE_PACKAGE) {
+            if (!expanded && FirstResult.isYouTube(pkg)) {
                 val hash = ClusterScreenParsing.topActivityHash(activityDump(), display)
                 val center = hash?.let { ClusterScreenParsing.miniPlayerCenter(exec(listOf("/system/bin/dumpsys", "activity", it))) }
                 if (center != null) {
@@ -408,7 +408,7 @@ internal object ClusterScreenCommand {
                     }
                     if (!wasPlaying) continue
                     // The player that was playing: out of its miniplayer corner, and playing again if it stopped.
-                    if (!expanded && pkg == YOUTUBE_PACKAGE) {
+                    if (!expanded && FirstResult.isYouTube(pkg)) {
                         val hash = ClusterScreenParsing.topActivityHash(dump, display)
                         val center = hash?.let { ClusterScreenParsing.miniPlayerCenter(exec(listOf("/system/bin/dumpsys", "activity", it))) }
                         if (center != null && !keeperStop) {

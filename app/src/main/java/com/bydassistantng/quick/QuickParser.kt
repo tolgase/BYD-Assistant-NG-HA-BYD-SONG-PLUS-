@@ -84,7 +84,8 @@ object QuickParser {
         }
         if (has(t, *SUNROOF)) {
             return when {
-                has(t, *VENT) -> single("sunroof", "breath")
+                // The vent position is a different control on this car: the percentage route cannot express a tilt.
+                has(t, *VENT) -> single("sunroof.tilt", "tilt")
                 has(t, *OPEN) -> single("sunroof", "open")
                 has(t, *CLOSE) -> single("sunroof", "close")
                 else -> null

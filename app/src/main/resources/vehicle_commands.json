@@ -314,6 +314,32 @@
     "labelPl": "Szyberdach",
     "labelId": "Sunroof",
     "deviceType": 1001,
+    "featureId": 1330642976,
+    "featureName": "Bodywork.BODYWORK_MOON_ROOF_OPEN_PERCENT_SET",
+    "invocation": {
+      "type": "genericFeatureSet"
+    },
+    "parameter": {
+      "type": "fixedEnum",
+      "options": {
+        "close": 0,
+        "half": 50,
+        "open": 100
+      }
+    },
+    "stateFeatureId": 1101004808,
+    "stateFeatureName": "Bodywork.BODYWORK_MOON_ROOF_OPEN_PERCENT"
+  },
+  {
+    "id": "sunroof.tilt",
+    "domain": "BODYWORK",
+    "displayName": "Tilt the sunroof open at the back (vent position)",
+    "label": "Sunroof tilt",
+    "labelAr": "إمالة فتحة السقف",
+    "labelRu": "Люк в режиме вентиляции",
+    "labelPl": "Szyberdach uchylony",
+    "labelId": "Sunroof miring",
+    "deviceType": 1001,
     "featureId": 1125122056,
     "featureName": "Bodywork.BODYWORK_MOON_ROOF_CTL_SET",
     "invocation": {
@@ -322,11 +348,12 @@
     "parameter": {
       "type": "fixedEnum",
       "options": {
-        "close": 0,
-        "open": 252,
-        "breath": 253
+        "tilt": 253,
+        "close": 0
       }
-    }
+    },
+    "stateFeatureId": 1101004808,
+    "stateFeatureName": "Bodywork.BODYWORK_MOON_ROOF_OPEN_PERCENT"
   },
   {
     "id": "sunroof.openPercent",
@@ -642,7 +669,7 @@
     "parameter": {
       "type": "fixedEnum",
       "options": {
-        "off": 0,
+        "off": 2,
         "on": 1
       }
     },

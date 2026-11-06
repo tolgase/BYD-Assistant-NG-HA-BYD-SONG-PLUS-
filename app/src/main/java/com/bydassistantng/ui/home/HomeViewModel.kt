@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
+import com.bydassistantng.service.WheelKeyService
 
 private const val TAG = "HomeViewModel"
 private const val RECORDED_AUDIO_MIME_TYPE = "audio/m4a"
@@ -91,6 +92,13 @@ class HomeViewModel @Inject constructor(
     private fun startNewTurn() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Connecting
+            // Song PLUS edition: a tap here belongs on the car under the same conditions as a press of the wheel
+            // button. The wheel-key service owns the microphone and the banner, so it runs the turn and reports it;
+            // this screen simply steps back. Without the service there is nothing to run it, so the tap goes to Gemini.
+            if (WheelKeyService.instance?.runOfflineTurnIfChosen() == true) {
+                _uiState.value = HomeUiState.Idle
+                return@launch
+            }
             val liveStarted = liveConversationController.start { status -> handleLiveStatus(status) }
             if (liveStarted) {
                 _uiState.value = HomeUiState.Listening

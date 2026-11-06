@@ -71,15 +71,23 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
      * battery and range, the cabin, the doors. Each device class is asked for on its own and a class this car does not
      * have simply contributes nothing, so one missing device does not lose the whole answer.
      */
-    private fun readCarStatus(): VehicleDispatchResult = try {
-        val devices = mapOf(
-            1000 to "android.hardware.bydauto.ac.BYDAutoAcDevice",
+    private suspend fun readCarStatus(): VehicleDispatchResult = try {
+        // Each device class through the same route as every other read: the class where the car allows it, and the car's
+        // own service where the class refuses this process. Reading the classes directly — which is what this did — gave
+        // an almost empty answer on a car that refuses them, and the assistant then said it did not know rather than
+        // saying the car had not answered.
+        val links = mapOf(
+            1000 to AC_DEVICE_CLASS,
             1001 to "android.hardware.bydauto.bodywork.BYDAutoBodyworkDevice",
+            1007 to OutsideTemperatureTool.DEVICE_CLASS,
             1023 to "android.hardware.bydauto.setting.BYDAutoSettingDevice",
-        ).mapValues { (_, cls) -> runCatching { getOrCreateInstance(cls) }.getOrNull() }
+        ).mapValues { (_, cls) -> runCatching { linked(cls) { it } }.getOrNull() }
         val statistic = runCatching { getOrCreateInstance("android.hardware.bydauto.statistic.BYDAutoStatisticDevice") }.getOrNull()
         val encoded = CarStatus.encode(
-            read = { type, id -> devices[type]?.let { readState(it, type, id) } },
+            resolve = { name, verified -> CarNumbers.of(name, verified) ?: verified },
+            read = { type, id -> links[type]?.read(type, id) },
+            // A temperature can be below zero, which the usual read reports as an error code rather than a value.
+            raw = { type, id -> (links[type] as? NativeLink)?.rawById(type, id) ?: links[type]?.read(type, id) },
             statistic = { method ->
                 statistic?.let { s -> runCatching { s.javaClass.getMethod(method).invoke(s) as? Number }.getOrNull() }
             },
@@ -392,7 +400,10 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
 
         /** A state that can be below zero (a temperature): whatever the service answered, by its name in the car's table. */
         fun readRaw(deviceType: Int, name: String, verified: Int): Int? =
-            CarNumbers.of(name, verified)?.let { NativeAnswer.rawValue(service.getInt(deviceType, it)) }
+            CarNumbers.of(name, verified)?.let { rawById(deviceType, it) }
+
+        /** The same, for a state whose number has already been worked out. */
+        fun rawById(deviceType: Int, featureId: Int): Int? = NativeAnswer.rawValue(service.getInt(deviceType, featureId))
 
         override fun write(deviceType: Int, featureId: Int, value: Int): VehicleDispatchResult {
             val result = NativeAnswer.writeResult(service.setInt(deviceType, featureId, value))

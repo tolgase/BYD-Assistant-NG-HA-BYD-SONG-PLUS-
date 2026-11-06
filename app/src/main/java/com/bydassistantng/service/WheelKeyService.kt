@@ -211,6 +211,11 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
                 return@launch
             }
 
+            // Song PLUS edition: no point asking Gemini first when the car is on its own, or when the user has asked
+            // for every command to be done on the car. Trying would cost the connection timeout before the window
+            // even opens, which on a Wi-Fi dongle with no route out is several seconds of nothing happening.
+            if (runOfflineTurnIfChosen()) return@launch
+
             val liveStarted = liveConversationController.start { status -> handleStatus(status) }
             if (liveStarted) {
                 // The Live controller plays the listening tone itself (and the others).
@@ -251,6 +256,21 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
             earcons.play(Earcon.LISTENING)
             banner.show(BannerMode.LISTENING, labelOverride = text(R.string.banner_listening_press_to_stop))
         }
+    }
+
+    /**
+     * Song PLUS edition: runs this turn on the car when that is what it should be, and says whether it did.
+     *
+     * The same decision for the wheel button and for the app's own microphone, so the two never behave differently —
+     * which matters most when the user has switched the feature to always use the car, and is sitting in the app
+     * wondering why a tap still waits for Gemini. The banner is the service's, so it is shown over the app as well.
+     */
+    suspend fun runOfflineTurnIfChosen(): Boolean {
+        if (!QuickCommands.shouldRunOffline(this)) return false
+        if (!preferencesRepository.vehicleControlEnabled.first()) return false
+        AppLogger.log(TAG, "Offline instant commands chosen without trying Live")
+        runOfflineTurn()
+        return true
     }
 
     /** One offline car command: listen, recognise on the car, do it, and show what was done on the banner. */

@@ -36,6 +36,17 @@ fun QuickCommandsSettings() {
             )
         }
         row {
+            SwitchSetting(
+                title = "Always use the car, never the internet",
+                subtitle = "Every press is recognised on the car and nothing is sent to Gemini. Use it to try the " +
+                    "offline commands without pulling the Wi-Fi out, or to keep the car working on its own. " +
+                    "Anything that is not a car command is reported as not understood.",
+                checked = state.offlineOnly,
+                enabled = state.enabled && state.model == ModelStatus.Ready,
+                onCheckedChange = { QuickCommands.setOfflineOnly(context, it) },
+            )
+        }
+        row {
             val status = when (val m = state.model) {
                 ModelStatus.Missing -> "Not downloaded (${state.language.sizeMb} MB, once)"
                 is ModelStatus.Downloading -> "Downloading… ${m.percent} %"

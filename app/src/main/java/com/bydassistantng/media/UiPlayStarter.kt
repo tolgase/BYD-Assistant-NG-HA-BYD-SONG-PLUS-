@@ -233,7 +233,7 @@ class UiPlayStarter(private val context: Context) {
     )
 
     private fun libraryOf(packageName: String): Library =
-        if (packageName == FirstResult.YOUTUBE) {
+        if (FirstResult.isYouTube(packageName)) {
             Library(YouTubeLibrary::rows, YouTubeLibrary::target)
         } else {
             Library(SpotifyLibrary::rows, SpotifyLibrary::target)
