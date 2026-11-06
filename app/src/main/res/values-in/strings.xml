@@ -464,4 +464,26 @@
     <string name="log_hide_private">Sembunyikan info pribadi</string>
     <string name="log_hide_private_on">Apa yang Anda ucapkan dan minta, tempat, judul lagu, kunci, alamat e-mail, nomor telepon, dan alamat jaringan disamarkan di sini, dalam yang Anda bagikan, dan dalam yang Anda simpan.</string>
     <string name="log_hide_private_off">Seluruh log ditampilkan. Termasuk apa yang Anda ucapkan dan minta. Bagikan hanya kepada orang yang Anda percayai.</string>
+    <!-- Song PLUS edition -->
+    <string name="names_title">Nama</string>
+    <string name="setup_name_names">Nama</string>
+    <string name="names_setup_body">Beri nama asisten Anda, dan beri tahu apa sebutan mobil Anda dan bagaimana ia memanggil Anda. Semuanya opsional dan dapat diubah nanti di Pengaturan.</string>
+    <string name="names_assistant_label">Nama asisten</string>
+    <string name="names_assistant_example">mis. Yasmine</string>
+    <string name="names_car_label">Nama mobil Anda</string>
+    <string name="names_car_example">mis. si Putih</string>
+    <string name="names_driver_label">Nama Anda</string>
+    <string name="names_driver_example">mis. Axel</string>
+    <string name="names_note">Asisten tetap dimulai dengan tombol di setir atau satu ketukan. Ia tidak mendengarkan namanya sepanjang waktu.</string>
+    <string name="names_row_title">Nama asisten dan mobil</string>
+    <string name="names_row_hint">Bagaimana asisten memperkenalkan diri, dan apa sebutannya untuk mobil dan Anda</string>
+    <string name="names_unset">Belum diatur</string>
+    <string name="names_later">Nanti</string>
+    <string name="language_french">Prancis</string>
+    <string name="dialect_tunisian">Tunisia (Derja)</string>
+    <string name="banner_car_status">Membaca status mobil</string>
+    <string name="banner_scene">Suasana: %1$s</string>
+    <string name="quick_listening">Luring: ucapkan perintah mobil</string>
+    <string name="quick_not_heard">Tidak ada yang terdengar</string>
+    <string name="quick_not_command">Luring, bukan perintah mobil: %1$s</string>
 </resources>

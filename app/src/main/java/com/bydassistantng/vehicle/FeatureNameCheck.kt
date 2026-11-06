@@ -43,6 +43,8 @@ internal object FeatureNameCheck {
         val numbers = when (command.invocation) {
             VehicleInvocation.GenericFeatureSet ->
                 listOfNotNull(command.featureId, command.stateFeatureId, command.requires?.featureId) + command.overrides.map { it.featureId }
+            // The A/C reaches its control through its own binder property, but the numbers are still the car's own.
+            is VehicleInvocation.AcBinderProperty -> listOfNotNull(command.featureId, command.stateFeatureId)
             is VehicleInvocation.NamedMethod -> listOfNotNull(command.stateFeatureId)
             else -> emptyList()
         }
@@ -58,6 +60,10 @@ internal object FeatureNameCheck {
                     add(Triple(STATE, command.stateFeatureName, command.stateFeatureId))
                     command.requires?.let { add(Triple(REQUIRES, it.featureName, it.featureId)) }
                     command.overrides.forEach { add(Triple(OVERRIDE, it.featureName, it.featureId)) }
+                }
+                is VehicleInvocation.AcBinderProperty -> {
+                    add(Triple(CONTROL, command.featureName, command.featureId))
+                    add(Triple(STATE, command.stateFeatureName, command.stateFeatureId))
                 }
                 is VehicleInvocation.NamedMethod -> add(Triple(STATE, command.stateFeatureName, command.stateFeatureId))
                 else -> Unit

@@ -40,3 +40,19 @@ A modified build of BYD Assistant NG (GPL-3.0, see LICENSE and NOTICE.md) for th
 - Already set up? Home asks once after the update ("Later" skips it). Change them any time in **Settings → Assistant → Names**.
 - The names go into the assistant's instructions: it introduces itself by its name, knows that the car's name means this car, and greets you by name now and then. Names are cleaned (24 characters, no quotes or brackets), so they can't change the instructions.
 - The assistant is still started with the steering-wheel button or a tap. It doesn't listen for its name all the time.
+
+## 1.5.0: rebuilt on upstream's DiLink 5.0 work
+Upstream solved DiLink 5.0 the same way this edition did, more thoroughly and with tests, so this edition is now
+rebased onto it instead of carrying its own version of the same thing.
+
+- **Dropped from here, taken from upstream:** the hand-written `autoservice` route and the climate fallback. Upstream's
+  native route, A/C route, permission-refusal reporting and platform detection replace them.
+- **Controls are found by name.** Upstream reads the car's own feature table and uses this car's number for each
+  control, offering only what the car actually has. The hand-built Song PLUS number list is no longer what drives it.
+- **Climate is named too (new here).** Upstream reached the climate through the A/C binder property without a name, and
+  its numbers are not a Song PLUS's. Every climate control now carries the car's name for it, a name resolves whichever
+  group the firmware files it under, and climate is never withheld when a car does not use the name — it falls back to
+  the verified number. Covered by `ClimateNameResolutionTest`.
+- **Kept from this edition:** the offline Vosk commands (Tunisian Derja, French, English), the scenes, `read_car`, and
+  the names given to the assistant, the car and the driver.
+- **Kept from upstream:** Indonesian, the shared-log redaction, and the release-notes tooling.
