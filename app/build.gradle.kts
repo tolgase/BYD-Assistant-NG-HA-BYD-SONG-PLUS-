@@ -16,9 +16,15 @@ val updateRepo: String = (findProperty("assistant.updateRepo") as String?) ?: Sy
 
 val sourceUrl: String = if (updateRepo.isBlank()) "" else "https://github.com/$updateRepo"
 
+// Song PLUS edition: update from your own server instead of GitHub. Pass
+//   -Passistant.updateUrl=https://your-server/byd/api/app/voice/releases
+// and, when that server asks for one, -Passistant.updateToken=<token>. Empty = use updateRepo above.
+val updateUrl: String = (findProperty("assistant.updateUrl") as String?) ?: System.getenv("ASSISTANT_UPDATE_URL") ?: ""
+val updateToken: String = (findProperty("assistant.updateToken") as String?) ?: System.getenv("ASSISTANT_UPDATE_TOKEN") ?: ""
+
 // The version of the next release: raise it (major.minor.patch, each 0-99) before publishing a new stable build.
 // Betas of that version are numbered automatically (1.1.0-beta.1, 1.1.0-beta.2, ...) and sort below it.
-val appVersionName = "1.5.0"
+val appVersionName = "1.6.0"
 
 // versionCode is computed from the version, so a newer version always has a higher code and Android never
 // refuses an update as a downgrade. AppVersion.code in the app uses the same formula (a unit test guards it).
@@ -66,6 +72,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "UPDATE_REPO", "\"$updateRepo\"")
         buildConfigField("String", "SOURCE_URL", "\"$sourceUrl\"")
+        buildConfigField("String", "UPDATE_URL", "\"$updateUrl\"")
+        buildConfigField("String", "UPDATE_TOKEN", "\"$updateToken\"")
     }
 
     signingConfigs {

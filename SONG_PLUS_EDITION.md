@@ -56,3 +56,14 @@ rebased onto it instead of carrying its own version of the same thing.
 - **Kept from this edition:** the offline Vosk commands (Tunisian Derja, French, English), the scenes, `read_car`, and
   the names given to the assistant, the car and the driver.
 - **Kept from upstream:** Indonesian, the shared-log redaction, and the release-notes tooling.
+
+## 1.6.0: update from your own server
+- **Updates from your own server**, not GitHub. Build with
+  `-Passistant.updateUrl=https://<your server>/<path>/api/app/voice/releases` and, where the server asks for one,
+  `-Passistant.updateToken=<token>`. Left empty, the app behaves exactly as upstream and checks GitHub.
+  Downloads stay held to that server's own host, as a GitHub source is held to github.com, so a release list
+  cannot send the app to fetch an APK from somewhere else. The token is sent to that host alone.
+- **Controls the car names but does not have are withheld.** The fridge, the rear seat heating and the mirror that
+  tilts in reverse all read "not fitted" on a Song PLUS; they are no longer offered.
+- **A control can be added by name alone**, with no feature number written down.
+- **Fixed:** `ac.compressor` named a feature this car does not have (`AC_COMPRESSOR_STATE`); it is `AC_COMPRESSOR_MODE`.

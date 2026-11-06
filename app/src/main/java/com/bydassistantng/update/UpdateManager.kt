@@ -85,7 +85,10 @@ class UpdateManager @Inject constructor(
     private val checkLock = Mutex()
     private var installJob: Job? = null
 
-    @Volatile private var source: UpdateSource? = UpdateSource.forRepo(BuildConfig.UPDATE_REPO)
+    // Your own server when the build names one, otherwise the GitHub repository the build names.
+    @Volatile private var source: UpdateSource? =
+        if (BuildConfig.UPDATE_URL.isNotBlank()) UpdateSource.forUrl(BuildConfig.UPDATE_URL)
+        else UpdateSource.forRepo(BuildConfig.UPDATE_REPO)
     @Volatile private var sourceIsTestOverride = false
 
     private val http = OkHttpClient.Builder()
@@ -93,7 +96,13 @@ class UpdateManager @Inject constructor(
         .readTimeout(30, TimeUnit.SECONDS)
         .cache(Cache(File(context.cacheDir, "update_http"), 2L * 1024 * 1024))
         .addInterceptor { chain ->
-            chain.proceed(chain.request().newBuilder().header("User-Agent", "BYD-Assistant-NG/${BuildConfig.VERSION_NAME}").build())
+            val b = chain.request().newBuilder().header("User-Agent", "BYD-Assistant-NG/${BuildConfig.VERSION_NAME}")
+            // The token only ever goes to the host the build was pointed at, never to GitHub or anywhere a redirect leads.
+            val host = source?.ownHost
+            if (BuildConfig.UPDATE_TOKEN.isNotBlank() && host != null && chain.request().url.host == host) {
+                b.header("x-app-token", BuildConfig.UPDATE_TOKEN)
+            }
+            chain.proceed(b.build())
         }
         .build()
 
