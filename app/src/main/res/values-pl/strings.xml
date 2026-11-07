@@ -463,10 +463,12 @@
     <string name="language_french">Francuski</string>
     <string name="dialect_tunisian">Tunezyjski (dardża)</string>
     <string name="banner_car_status">Odczyt stanu auta</string>
+    <string name="banner_navigation_read">Odczytuję trasę</string>
     <string name="banner_scene">Scena: %1$s</string>
     <string name="quick_listening">Offline: powiedz polecenie</string>
     <string name="quick_not_heard">Nic nie słychać</string>
     <string name="quick_not_command">Offline, to nie polecenie: %1$s</string>
+    <string name="quick_nothing_to_repeat">Nie ma jeszcze czego powtórzyć</string>
     <!-- Song PLUS edition: names -->
     <string name="names_title">Imiona</string>
     <string name="setup_name_names">Imiona</string>

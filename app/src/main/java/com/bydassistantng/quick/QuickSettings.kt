@@ -76,12 +76,23 @@ fun QuickCommandsSettings() {
                     }
                     Text(
                         "Examples: \"سكّر الشبابك\", \"شعّل الكليم اثنين و عشرين\", \"ferme la fenêtre\", \"clim vingt-deux\", " +
-                            "\"j'ai chaud\", \"ambiance bleue\", \"close everything\". Scenes: cool down, warm up, defrost, " +
-                            "close everything, air out, climate off.",
+                            "\"j'ai chaud\", \"ambiance bleue\", \"close everything\", \"بسلامة\" (goodbye), \"عاود\" (again). " +
+                            "Scenes: cool down, warm up, defrost, close everything, air out, climate off, goodbye.",
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 8.dp),
                     )
+                },
+            )
+        }
+        row {
+            SettingRow(
+                title = "Learned phrases: ${state.learned}",
+                subtitle = "When the car does not understand your first words but Gemini then runs a car command, the " +
+                    "car learns them: next time they work at once, even offline. Door locks are never learned. " +
+                    "Clear them if one was learned wrong.",
+                trailing = {
+                    SettingButton(label = "Clear", enabled = state.learned > 0, onClick = { QuickCommands.clearLearned(context) })
                 },
             )
         }

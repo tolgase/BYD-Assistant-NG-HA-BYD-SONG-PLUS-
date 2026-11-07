@@ -91,6 +91,17 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
             statistic = { method ->
                 statistic?.let { s -> runCatching { s.javaClass.getMethod(method).invoke(s) as? Number }.getOrNull() }
             },
+            // Song PLUS edition: the trip computer. Only plain getters (no arguments, a number back) whose names are about
+            // consumption or distance are called, each on its own, so one that throws costs only its own reading.
+            tripComputer = {
+                statistic?.let { s ->
+                    runCatching { s.javaClass.methods.toList() }.getOrDefault(emptyList())
+                        .filter { m -> m.parameterTypes.isEmpty() && TripComputer.wanted(m.name) && TripComputer.numeric(m.returnType) }
+                        .distinctBy { it.name }
+                        .take(40)
+                        .associate { m -> m.name to runCatching { m.invoke(s) as? Number }.getOrNull() }
+                }.orEmpty()
+            },
         )
         VehicleDispatchResult.Success(encoded)
     } catch (t: Throwable) {

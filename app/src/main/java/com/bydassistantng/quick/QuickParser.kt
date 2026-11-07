@@ -145,6 +145,8 @@ object QuickParser {
 
     private fun sceneFor(t: String): Scene? {
         val id = when {
+            // Goodbye before close-all: "goodbye" tidies the whole cabin, of which closing the glass is one part.
+            has(t, *SCENE_GOODBYE) -> "goodbye"
             has(t, *SCENE_CLOSE_ALL) -> "close_all"
             has(t, *SCENE_OFF) -> "climate_off"
             has(t, *SCENE_HOT) -> "cool_down"
@@ -153,6 +155,15 @@ object QuickParser {
             else -> return null
         }
         return Scenes.byId(id)
+    }
+
+    /**
+     * Whether [raw] just asks to do the last thing again ("again", "encore", "عاود"). The previous command is kept by
+     * [QuickCommands], so this only has to recognise the ask; an empty or unmatched phrase is not a repeat.
+     */
+    fun isRepeat(raw: String): Boolean {
+        val t = normalize(raw)
+        return t.isNotBlank() && has(t, *REPEAT)
     }
 
     private fun colorIn(t: String): String? = COLORS.firstOrNull { (_, words) -> has(t, *words) }?.first
@@ -310,6 +321,22 @@ object QuickParser {
     )
     private val SCENE_AIR = arrayOf("air out", "air the car", "aere la voiture", "aerer la voiture", "هوي الكرهبه", "خلي الهوا يدخل")
     private val SCENE_OFF = arrayOf("everything off", "turn everything off", "eteins tout", "coupe tout", "طفي كل شي", "طفي كلشي", "طفي الكل")
+
+    // Leaving the car: tidy the cabin and close the glass. Deliberately not "salut" (also a greeting) or a bare "bye"
+    // word that a longer sentence could trip; the phrases here are ones a driver says on the way out.
+    private val SCENE_GOODBYE = arrayOf(
+        "goodbye", "good bye", "bye bye", "i m leaving", "im leaving", "i am leaving", "i m off", "see you",
+        // Not "a plus": "mets la clim a plus fort" would close the glass.
+        "au revoir", "a bientot", "je pars", "je m en vais",
+        "بسلامه", "في امان الله", "باي باي", "راني ماشي", "تصبح على خير",
+    )
+
+    // "Do that again": repeat the last offline command. Kept narrow so it never swallows a real command.
+    // Not "زيد" ("زيد الصوت" is volume up) nor "remets" ("remets la clim"): they start real commands.
+    private val REPEAT = arrayOf(
+        "again", "do it again", "one more time", "repeat", "encore", "refais", "la meme chose",
+        "عاود", "عاوده", "مره اخرى", "نفس الحاجه", "كيف قبل",
+    )
 
     private val ALL_WINDOWS = listOf("window.driver", "window.passenger", "window.rearLeft", "window.rearRight")
 

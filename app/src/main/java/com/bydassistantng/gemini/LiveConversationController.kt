@@ -104,6 +104,13 @@ private const val RESPONSE_TIMEOUT_MS = 12_000L
 // the tail of the assistant's own voice.
 private const val REOPEN_DELAY_MS = 500L
 
+// Song PLUS edition: a Wi-Fi dongle in a moving car drops for a second or two and comes straight back. A session
+// that broke mid-conversation is retried for this long, waiting between attempts, before the driver is finally told
+// the connection was lost — so a brief blip no longer ends the conversation ("cuts and won't resume"). The resumption
+// handle is kept across the drop, so the model still knows what was being talked about once the link returns.
+private const val RECONNECT_WINDOW_MS = 9_000L
+private const val RECONNECT_RETRY_DELAY_MS = 1_200L
+
 // The exterior speaker's helper starts this long after the vehicle helper, not beside it.
 private const val HELPER_STAGGER_MS = 1_500L
 
@@ -1342,11 +1349,30 @@ class LiveConversationController @Inject constructor(
      * happens, but the conversation itself carries on. */
     private suspend fun reconnect(): Boolean {
         goingAway = false
+        val resume = liveClient.canResume
         AppLogger.log(
             TAG,
-            "Opening a new Live session" + if (liveClient.canResume) " and resuming the conversation on it" else " (the earlier turns are lost)",
+            "Opening a new Live session" + if (resume) " and resuming the conversation on it" else " (the earlier turns are lost)",
         )
-        return openSession(resume = true)
+        // Try again across a short window rather than giving up on the first attempt: on a moving car's dongle the
+        // link is often back within a second or two, and a single failed attempt is exactly what the driver heard
+        // as the conversation cutting off and never coming back. A genuinely dead link fails every attempt and the
+        // window then ends the conversation honestly.
+        val deadline = SystemClock.elapsedRealtime() + RECONNECT_WINDOW_MS
+        var attempt = 0
+        while (conversationActive) {
+            attempt++
+            if (openSession(resume = resume)) {
+                if (attempt > 1) AppLogger.log(TAG, "Reconnected on attempt $attempt")
+                return true
+            }
+            if (SystemClock.elapsedRealtime() >= deadline) {
+                AppLogger.log(TAG, "Could not reopen the session within ${RECONNECT_WINDOW_MS}ms ($attempt attempt(s)) — giving up")
+                return false
+            }
+            delay(RECONNECT_RETRY_DELAY_MS)
+        }
+        return false
     }
 
     private suspend fun handleEvent(event: LiveEvent) {
@@ -1513,8 +1539,11 @@ class LiveConversationController @Inject constructor(
                 // Song PLUS edition: a link that wobbled is not the end of the conversation. The audio already
                 // received keeps playing, and a new session is opened behind it — resumed, so the model still knows
                 // what was being talked about. The budget in [SessionRecovery] is what stops this becoming a loop.
+                // Mid-conversation the link was working moments ago, so a network blip is worth the bounded retry in
+                // reconnect() rather than an instant "connection lost" — the instantaneous network reading is false
+                // during the very drop we want to ride out. The retry window gives up honestly if the link is truly gone.
                 val recoverable = conversationActive &&
-                    recovery.allow(event.kind, NetworkState.isOnline(context), SystemClock.elapsedRealtime())
+                    recovery.allow(event.kind, networkUsable = true, SystemClock.elapsedRealtime())
                 if (recoverable) {
                     AppLogger.log(TAG, "Recovering the conversation on a new session (attempt ${recovery.spent})")
                     listenCapJob?.cancel()

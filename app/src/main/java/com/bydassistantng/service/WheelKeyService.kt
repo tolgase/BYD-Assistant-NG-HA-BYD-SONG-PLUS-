@@ -283,14 +283,20 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
             banner.show(BannerMode.ERROR, labelOverride = text(R.string.quick_not_heard), shownMs = 4_000)
             return
         }
+        // "Again"/"عاود" repeats the last command without the driver saying it all over; force past the dedupe ledger.
+        val repeat = QuickParser.isRepeat(heard)
+        // The phrase book, then "again", then the driver's own phrases learned from Gemini online.
         val plan = QuickParser.parse(heard)
+            ?: (if (repeat) QuickCommands.lastPlan() else null)
+            ?: (if (repeat) null else QuickCommands.learnedPlan(this, heard))
         if (plan == null) {
             earcons.play(Earcon.OFFLINE)
-            banner.show(BannerMode.ERROR, labelOverride = text(R.string.quick_not_command, heard), shownMs = 5_000)
+            val label = if (repeat) text(R.string.quick_nothing_to_repeat) else text(R.string.quick_not_command, heard)
+            banner.show(BannerMode.ERROR, labelOverride = label, shownMs = 5_000)
             return
         }
         banner.show(BannerMode.THINKING, labelOverride = heard)
-        val outcome = QuickCommands.execute(this, plan, vehicleController)
+        val outcome = QuickCommands.execute(this, plan, vehicleController, force = repeat)
         earcons.play(if (outcome.ok) Earcon.DONE else Earcon.ERROR)
         banner.show(if (outcome.ok) BannerMode.SPEAKING else BannerMode.ERROR, labelOverride = outcome.summary, shownMs = 5_000)
     }

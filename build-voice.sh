@@ -31,9 +31,19 @@ if [ "$#" -gt 0 ]; then
   echo "Gradle arguments: $(printf '%s\n' "$@" | sed 's/\(-Passistant\.updateToken=\).*/\1<hidden>/' | tr '\n' ' ')"
 fi
 
+# The unit tests run first, on the same compiled code: a failing test stops the build, so a broken command never
+# reaches the car. SKIP_TESTS=1 ./build-voice.sh ... builds without them (for an emergency fix only).
+if [ "${SKIP_TESTS:-0}" = "1" ]; then
+  GRADLE_TASKS="assembleRelease"
+  echo "Unit tests skipped (SKIP_TESTS=1)."
+else
+  GRADLE_TASKS="testReleaseUnitTest assembleRelease"
+  echo "Running the unit tests first, then building the APK."
+fi
+
 docker run --rm -v "$PWD:/src" -v byd-voice-gradle:/root/.gradle -v byd-voice-sdk:/opt/android-sdk \
-  -e ASSISTANT_UPDATE_URL -e ASSISTANT_UPDATE_TOKEN byd-voice-builder \
-  bash -c 'chmod +x gradlew && ./gradlew --no-daemon --console=plain assembleRelease "$@"' gradle "$@"
+  -e ASSISTANT_UPDATE_URL -e ASSISTANT_UPDATE_TOKEN -e GRADLE_TASKS="$GRADLE_TASKS" byd-voice-builder \
+  bash -c 'chmod +x gradlew && ./gradlew --no-daemon --console=plain $GRADLE_TASKS "$@"' gradle "$@"
 
 APK=$(ls -t app/build/outputs/apk/release/*.apk | head -n1)
 cp "$APK" out/byd-assistant-songplus.apk

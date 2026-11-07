@@ -464,10 +464,12 @@
     <string name="language_french">French</string>
     <string name="dialect_tunisian">Tunisian (Derja)</string>
     <string name="banner_car_status">Reading the car status</string>
+    <string name="banner_navigation_read">Reading the route</string>
     <string name="banner_scene">Scene: %1$s</string>
     <string name="quick_listening">Offline: say a car command</string>
     <string name="quick_not_heard">Nothing heard</string>
     <string name="quick_not_command">Offline, not a car command: %1$s</string>
+    <string name="quick_nothing_to_repeat">Nothing to repeat yet</string>
     <!-- Song PLUS edition: names -->
     <string name="names_title">Names</string>
     <string name="setup_name_names">Names</string>

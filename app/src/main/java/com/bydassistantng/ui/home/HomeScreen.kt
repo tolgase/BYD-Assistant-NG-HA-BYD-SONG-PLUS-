@@ -36,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.bydassistantng.BuildConfig
 import com.bydassistantng.R
 import com.bydassistantng.update.UpdateState
 import com.bydassistantng.util.hasMicPermission
@@ -115,6 +116,18 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenUpdates: () -> Unit, viewModel:
                         )
                     }
                 }
+            }
+            // Song PLUS edition: the installed version, always in sight, so what is on the car can be told at a glance
+            // (and matched against what the update server has). Tapping it opens Updates.
+            TextButton(
+                onClick = onOpenUpdates,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
+            ) {
+                Text(
+                    stringResource(R.string.about_version, "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
             UpdateNote(
                 availableVersion = (updateState as? UpdateState.Available)?.release?.version?.toString(),

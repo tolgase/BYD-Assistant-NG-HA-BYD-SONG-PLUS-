@@ -463,10 +463,12 @@
     <string name="language_french">الفرنسية</string>
     <string name="dialect_tunisian">التونسية (الدارجة)</string>
     <string name="banner_car_status">جارٍ قراءة حالة السيارة</string>
+    <string name="banner_navigation_read">قراءة المسار</string>
     <string name="banner_scene">مشهد: %1$s</string>
     <string name="quick_listening">بدون إنترنت: قل أمراً للسيارة</string>
     <string name="quick_not_heard">لم أسمع شيئاً</string>
     <string name="quick_not_command">بدون إنترنت، ليس أمراً للسيارة: %1$s</string>
+    <string name="quick_nothing_to_repeat">لا يوجد أمر لإعادته بعد</string>
     <!-- Song PLUS edition: names -->
     <string name="names_title">الأسماء</string>
     <string name="setup_name_names">الأسماء</string>

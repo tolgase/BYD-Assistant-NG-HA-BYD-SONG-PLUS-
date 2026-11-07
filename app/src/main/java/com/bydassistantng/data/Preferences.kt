@@ -135,7 +135,9 @@ class PreferencesRepository @Inject constructor(@ApplicationContext context: Con
      * (news, weather, sports, prices). Off by default: Google only allows search grounding on a paid
      * Gemini plan, and on a free key the server refuses the session outright (quota error) until the
      * controller retries without it. */
-    val webSearchEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.WEB_SEARCH_ENABLED] ?: false }
+    // Song PLUS edition: on unless switched off — the driver asks about news, weather and prices too. A key that cannot
+    // use Google Search is detected at the start of a conversation and the session simply runs without it.
+    val webSearchEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.WEB_SEARCH_ENABLED] ?: true }
     suspend fun setWebSearchEnabled(enabled: Boolean) {
         dataStore.edit { it[Keys.WEB_SEARCH_ENABLED] = enabled }
     }

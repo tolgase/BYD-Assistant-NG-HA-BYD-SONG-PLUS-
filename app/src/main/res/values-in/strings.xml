@@ -482,8 +482,10 @@
     <string name="language_french">Prancis</string>
     <string name="dialect_tunisian">Tunisia (Derja)</string>
     <string name="banner_car_status">Membaca status mobil</string>
+    <string name="banner_navigation_read">Membaca rute</string>
     <string name="banner_scene">Suasana: %1$s</string>
     <string name="quick_listening">Luring: ucapkan perintah mobil</string>
     <string name="quick_not_heard">Tidak ada yang terdengar</string>
     <string name="quick_not_command">Luring, bukan perintah mobil: %1$s</string>
+    <string name="quick_nothing_to_repeat">Belum ada yang bisa diulang</string>
 </resources>

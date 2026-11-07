@@ -74,12 +74,14 @@ object CarStatus {
      * @param read (device type, feature id) -> value, or null when the car did not answer.
      * @param raw like [read] but keeps a negative answer, which is a real temperature rather than an error code.
      * @param statistic the statistic device's getters, by method name; null where that device is not usable here.
+     * @param tripComputer every consumption/mileage getter the statistic device has, by method name (see [TripComputer]).
      */
     fun encode(
         resolve: (String, Int) -> Int?,
         read: (Int, Int) -> Int?,
         raw: (Int, Int) -> Int? = read,
         statistic: (String) -> Number?,
+        tripComputer: () -> Map<String, Number?> = { emptyMap() },
     ): String {
         // A verified number of 0 means there is none: the state is known by name alone, so a car whose table does not
         // carry that name simply has no reading for it rather than a read of feature 0.
@@ -113,6 +115,10 @@ object CarStatus {
             electric?.takeIf { it in 0..2000 }?.let { put(electricRangeByName.key, it) }
             val fuel = statistic("getFuelDrivingRangeValue")?.toDouble()?.toInt() ?: value(INSTRUMENT, fuelRangeByName)
             fuel?.takeIf { it in 0..3000 }?.let { put(fuelRangeByName.key, it) }
+
+            // Song PLUS edition: the car's own trip computer, under its own names; absent when the car gives none.
+            val trip = runCatching { TripComputer.select(tripComputer()) }.getOrDefault(emptyMap())
+            if (trip.isNotEmpty()) put("trip_computer", buildJsonObject { trip.forEach { (k, v) -> put(k, v) } })
         }.toString()
     }
 
@@ -124,7 +130,14 @@ object CarStatus {
             put(
                 "note",
                 "Live readings from the car. Window/sunroof values are percent open (0 = closed); temperatures are " +
-                    "degrees Celsius. Answer briefly, and only about what is here — a reading the car did not give is absent.",
+                    "degrees Celsius. Answer briefly, and only about what is here — a reading the car did not give is absent. " +
+                    "trip_computer is the car's own trip computer under its BYD names (con = consumption, phm = per 100 km, " +
+                    "elec = electric in kWh, fuel = petrol in litres, mileage = km). previous_readings are earlier snapshots " +
+                    "(hours_ago) of the same values. For a question about consumption or driving efficiency: compare the " +
+                    "latest with the earlier ones, say plainly what went up or down, then give one or two concrete tips for " +
+                    "this plug-in hybrid (charge and drive electric in town, smooth acceleration, anticipate stops so " +
+                    "regeneration recovers energy, moderate A/C, steady highway speed, correct tyre pressure). Never invent a " +
+                    "number that is not here.",
             )
         }
     }.getOrNull()

@@ -44,6 +44,15 @@ object Scenes {
                 "seat.passenger.heating" to "off", "seat.passenger.ventilation" to "off", "steeringWheel.heating" to "off",
             ),
         ),
+        // The courtesy shutdown for leaving the car: this never touches ignition, drive or power — those stay out of
+        // reach everywhere — it only tidies the cabin (climate off, glass closed) the way a driver would on the way out.
+        Scene(
+            "goodbye", "Goodbye", "the user is leaving the car: A/C off, every seat and steering-wheel heating or ventilation off, all four windows and the sunroof closed",
+            listOf(
+                "ac.power" to "off", "seat.driver.heating" to "off", "seat.driver.ventilation" to "off",
+                "seat.passenger.heating" to "off", "seat.passenger.ventilation" to "off", "steeringWheel.heating" to "off",
+            ) + allWindows.map { it to "close" } + ("sunroof" to "close"),
+        ),
     )
 
     fun byId(id: String?): Scene? = all.find { it.id.equals(id?.trim(), ignoreCase = true) }

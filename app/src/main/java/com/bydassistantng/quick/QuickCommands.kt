@@ -54,6 +54,8 @@ data class QuickState(
     val model: ModelStatus,
     /** Run every command on the car and never open a Live conversation, even with internet. */
     val offlineOnly: Boolean = false,
+    /** How many of the driver's own phrases have been learned from Gemini (see [LearnedCommands]). */
+    val learned: Int = 0,
 )
 
 /** What an offline command did, for the banner: [ok] when every action was accepted. */
@@ -100,6 +102,7 @@ object QuickCommands {
                 else -> ModelStatus.Missing
             },
             offlineOnly = p.getBoolean("offline_only", false),
+            learned = learnedList(context).size,
         )
     }
 
@@ -311,6 +314,7 @@ object QuickCommands {
 
     fun beginTap(context: Context, controller: VehicleController) {
         endTap()
+        clearPending()
         if (!isReady(context)) return
         val chunks = Channel<ByteArray>(Channel.UNLIMITED)
         tap = chunks
@@ -324,9 +328,12 @@ object QuickCommands {
                     if (text.isEmpty()) continue
                     // Only the first phrase: after it, the conversation is Gemini's.
                     endTap()
-                    val plan = QuickParser.parse(text)
+                    // The phrase book first, then what was learned from Gemini before: either runs at once.
+                    val plan = QuickParser.parse(text) ?: learnedPlan(context, text)
                     AppLogger.log(TAG, "Live first phrase heard offline: \"$text\" -> ${plan?.let { it.scene?.id ?: it.actions } ?: "not a car command"}")
-                    if (plan != null) execute(context, plan, controller)
+                    // Not understood here: whatever car command Gemini runs for it is learned for next time — except
+                    // "again", which must keep meaning "the last command" rather than whatever it happened to repeat once.
+                    if (plan != null) execute(context, plan, controller) else if (!QuickParser.isRepeat(text)) expectLearning(text)
                     break
                 }
             } finally {
@@ -354,6 +361,95 @@ object QuickCommands {
 
     private val ledger = HashMap<String, Long>()
 
+    /** The last offline plan that was run, so "again"/"عاود" can repeat it without the driver saying it all over. */
+    @Volatile private var lastPlan: QuickPlan? = null
+
+    /** The last plan run offline, or null when nothing has been done yet this run. */
+    fun lastPlan(): QuickPlan? = lastPlan
+
+    // ── Learned from Gemini (see [LearnedCommands]) ─────────────────────────────────────────────────
+
+    // A Gemini command only belongs to the phrase if it comes soon after it, in the same exchange: the answer to a
+    // follow-up question ("which window?") is not what the first words meant on their own.
+    private const val LEARN_WINDOW_MS = 8_000L
+
+    private class Pending(val phrase: String, val atMs: Long, val turn: Long) {
+        /** The user turn whose commands were learned for this phrase; later turns are not this phrase's. */
+        var learnedTurn: Long? = null
+    }
+
+    @Volatile private var learned: List<LearnedCommand>? = null
+    private var pending: Pending? = null
+
+    // Counts the user's turns in a Live conversation (each "user stopped speaking"), to tell one exchange from the next.
+    @Volatile private var turnId = 0L
+
+    @Synchronized
+    private fun learnedList(context: Context): List<LearnedCommand> =
+        learned ?: LearnedCommands.decode(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("learned", null))
+            .also { learned = it }
+
+    @Synchronized
+    private fun saveLearned(context: Context, list: List<LearnedCommand>) {
+        learned = list
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("learned", LearnedCommands.encode(list)).apply()
+    }
+
+    /** What the driver taught for [heard] before, or null. Counts the use. */
+    fun learnedPlan(context: Context, heard: String): QuickPlan? {
+        val list = learnedList(context)
+        val entry = LearnedCommands.match(heard, list) ?: return null
+        val plan = LearnedCommands.plan(entry) ?: return null
+        saveLearned(context, LearnedCommands.markUsed(list, entry.phrase))
+        AppLogger.log(TAG, "Learned phrase matched: \"$heard\" ~ \"${entry.phrase}\" -> ${entry.scene ?: entry.actions}")
+        return plan
+    }
+
+    /** Forgets every phrase learned from Gemini (Settings), for when one was learned wrong. */
+    fun clearLearned(context: Context) {
+        saveLearned(context, emptyList())
+        clearPending()
+        refresh(context)
+    }
+
+    @Synchronized
+    private fun clearPending() {
+        pending = null
+    }
+
+    @Synchronized
+    private fun expectLearning(heard: String) {
+        pending = Pending(heard, now(), turnId)
+    }
+
+    /** The user finished a turn of a Live conversation. */
+    fun onUserTurnEnded() {
+        turnId++
+    }
+
+    /**
+     * Gemini ran [commandId] = [value] (or the scene [scene]): if the first phrase of this conversation was heard on the car
+     * and not understood there, the two are kept together so the phrase works offline from now on.
+     */
+    @Synchronized
+    fun learnFromGemini(context: Context, commandId: String?, value: String?, scene: String?) {
+        val p = pending ?: return
+        val turn = turnId
+        // Too late, or a later exchange: not what the phrase meant.
+        if (now() - p.atMs > LEARN_WINDOW_MS || turn - p.turn > 1 || (p.learnedTurn != null && p.learnedTurn != turn)) {
+            pending = null
+            return
+        }
+        val action = if (commandId != null && value != null) commandId to value else null
+        val before = learnedList(context)
+        val after = LearnedCommands.learn(before, p.phrase, action, scene, System.currentTimeMillis(), replace = p.learnedTurn == null)
+        if (after === before) return
+        p.learnedTurn = turn
+        saveLearned(context, after)
+        AppLogger.log(TAG, "Learned for offline: \"${p.phrase}\" -> ${scene ?: action}")
+        _state.value = _state.value.copy(learned = after.size)
+    }
+
     private fun now() = System.nanoTime() / 1_000_000
 
     /** Whether this exact command was done here a moment ago (Gemini is then told it is done, not sent again). */
@@ -370,15 +466,21 @@ object QuickCommands {
         ledger["$commandId=$value"] = t
     }
 
-    /** Sends every action of [plan] to the car; says what happened in one line for the banner. */
-    suspend fun execute(context: Context, plan: QuickPlan, controller: VehicleController): QuickOutcome {
+    /**
+     * Sends every action of [plan] to the car; says what happened in one line for the banner.
+     *
+     * [force] runs each action even if it was done a moment ago (the dedupe ledger is skipped): a repeat ("again")
+     * is a deliberate ask to do the same thing once more, not the broker redelivering the same command.
+     */
+    suspend fun execute(context: Context, plan: QuickPlan, controller: VehicleController, force: Boolean = false): QuickOutcome {
         val lang = runCatching { AppLanguage.locale(context).language }.getOrDefault("en")
+        if (plan.allActions.isNotEmpty()) lastPlan = plan
         var allOk = true
         val parts = mutableListOf<String>()
         for ((id, word) in plan.allActions) {
             val command = VehicleCommandRegistry.byId(id) ?: continue
             val value = VehicleCommandRegistry.resolveValue(command, word) ?: continue
-            if (wasJustDone(id, value)) continue
+            if (!force && wasJustDone(id, value)) continue
             val result = try {
                 (if (!command.needsCarLink) InAppVehicleController(context) else controller).dispatch(command, value)
             } catch (t: Throwable) {

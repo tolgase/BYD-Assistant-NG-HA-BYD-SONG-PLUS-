@@ -24,7 +24,7 @@ val updateToken: String = (findProperty("assistant.updateToken") as String?) ?: 
 
 // The version of the next release: raise it (major.minor.patch, each 0-99) before publishing a new stable build.
 // Betas of that version are numbered automatically (1.1.0-beta.1, 1.1.0-beta.2, ...) and sort below it.
-val appVersionName = "1.6.2"
+val appVersionName = "1.6.4"
 
 // versionCode is computed from the version, so a newer version always has a higher code and Android never
 // refuses an update as a downgrade. AppVersion.code in the app uses the same formula (a unit test guards it).

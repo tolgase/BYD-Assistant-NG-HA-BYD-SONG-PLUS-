@@ -18,6 +18,7 @@ import com.bydassistantng.data.AssistantLanguage
 import com.bydassistantng.media.MediaControlTool
 import com.bydassistantng.media.PlayMediaTool
 import com.bydassistantng.navigation.NavigationTool
+import com.bydassistantng.navigation.ReadNavigationTool
 import com.bydassistantng.quick.QuickCommands
 import com.bydassistantng.quick.SceneTool
 import com.bydassistantng.util.AppLanguage
@@ -27,6 +28,7 @@ import com.bydassistantng.vehicle.VolumeTool
 import com.bydassistantng.passenger.PassengerScreenTool
 import com.bydassistantng.vehicle.InAppVehicleController
 import com.bydassistantng.vehicle.ReadCarTool
+import com.bydassistantng.vehicle.ConsumptionHistory
 import com.bydassistantng.vehicle.needsCarLink
 import com.bydassistantng.vehicle.SetDriveModeTool
 import com.bydassistantng.cluster.ClusterOptions
@@ -80,6 +82,8 @@ fun assistantTools(
 ): List<GeminiTool> {
     val declarations = buildList {
         add(NavigationTool.declaration)
+        // Reads the maps app's own route (distance left, arrival): like navigation, it never touches the car.
+        add(ReadNavigationTool.declaration)
         add(AppLauncherTool.declaration)
         add(CloseAppTool.declaration)
         add(MediaControlTool.declaration)
@@ -125,7 +129,11 @@ object VehicleFunctionDispatcher {
     private val repeatGuard = VehicleRepeatGuard()
 
     /** The user asked something new: asking for the same command again is on purpose, not a repeat. */
-    fun newUserTurn() = repeatGuard.reset()
+    fun newUserTurn() {
+        repeatGuard.reset()
+        // Song PLUS edition: lets the offline layer tell this exchange's commands from the next one's.
+        QuickCommands.onUserTurnEnded()
+    }
 
     suspend fun dispatch(
         functionCall: GeminiFunctionCall,
@@ -162,7 +170,16 @@ object VehicleFunctionDispatcher {
         }
 
         if (functionCall.name == SceneTool.FUNCTION_NAME) {
-            return SceneTool.handle(context, functionCall, reflectionController, vehicleControlEnabled, onDispatching)
+            return SceneTool.handle(context, functionCall, reflectionController, vehicleControlEnabled, onDispatching).also { answer ->
+                // Song PLUS edition: a scene Gemini ran for words the car did not understand is learned for offline use.
+                if ((answer["status"] as? JsonPrimitive)?.content == "ok") {
+                    (functionCall.args["scene"] as? JsonPrimitive)?.content?.let { QuickCommands.learnFromGemini(context, null, null, it) }
+                }
+            }
+        }
+
+        if (functionCall.name == ReadNavigationTool.FUNCTION_NAME) {
+            return ReadNavigationTool.handle(context, onDispatching)
         }
 
         if (functionCall.name == ReadCarTool.FUNCTION_NAME) {
@@ -237,6 +254,10 @@ object VehicleFunctionDispatcher {
             }
         }
         AppLogger.log(TAG, "dispatch ${command.id}(value=$rawValue -> $resolvedValue) -> $result")
+        // Song PLUS edition: a command the car itself accepted, for words it did not understand offline, is learned.
+        if (result is VehicleDispatchResult.Success && resolvedValue != null && rawValue != null) {
+            QuickCommands.learnFromGemini(context, command.id, rawValue, null)
+        }
         return result.toResponseJson()
     }
 
@@ -270,7 +291,9 @@ object VehicleFunctionDispatcher {
         return when (val result = controller.query(what.query)) {
             is VehicleDispatchResult.Success -> {
                 AppLogger.log(TAG, "read_car ${what.word} -> ${result.note}")
-                ReadCarTool.report(what, result.note) ?: buildJsonObject {
+                // Song PLUS edition: the status carries the earlier energy readings too, for consumption questions.
+                val note = if (what == ReadCarTool.What.STATUS) ConsumptionHistory.attach(context, result.note) else result.note
+                ReadCarTool.report(what, note) ?: buildJsonObject {
                     put("status", "error")
                     put("error", "The car's answer could not be read.")
                 }
@@ -390,7 +413,12 @@ fun voiceAssistantSystemPrompt(
         "range and battery, navigation, music — so when a word is unclear, prefer the reading that is a car or assistant " +
         "request over an unrelated phrase. For several car settings at once (\"I'm hot\", \"close everything\"), " +
         "use run_scene when a scene fits. For any question about the car's current state (what is open, battery, " +
-        "range, A/C, doors), call read_car with what=status before answering."
+        "range, A/C, doors), call read_car with what=status before answering. For questions about fuel or energy " +
+        "consumption or how to drive more economically, call read_car with what=status and use its trip_computer and " +
+        "previous_readings. For \"how far is it\", \"when do we arrive\" or \"do I have enough battery/fuel to get there\", " +
+        "call read_navigation (and read_car for the range). A plain goodbye just ends the conversation; only when the " +
+        "user says they are leaving or parking the car, or asks to close up, run the goodbye scene (it tidies the " +
+        "cabin and closes the glass; it never switches the car off)."
     val searchInstruction = if (webSearch) {
         " For questions about current information — news, weather, sports results, prices, opening hours — " +
             "use Google Search, then answer in one or two spoken sentences without reading out links or sources."
