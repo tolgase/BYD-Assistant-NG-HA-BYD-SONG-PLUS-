@@ -64,6 +64,7 @@ internal fun AssistantPane(viewModel: SettingsViewModel) {
     val greetingEnabled by viewModel.greetingEnabled.collectAsState()
     val welcomeSummary by viewModel.welcomeSummary.collectAsState()
     val driveCoach by viewModel.driveCoach.collectAsState()
+    val driveTips by viewModel.driveTips.collectAsState()
     val autoStartConfirmed = autoStartConfirmed(viewModel)
     val greetingSpeaker by viewModel.greetingSpeaker.collectAsState()
     val hasHeadrest by viewModel.headrestSpeakerPresent.collectAsState()
@@ -320,6 +321,16 @@ internal fun AssistantPane(viewModel: SettingsViewModel) {
                     checked = driveCoach,
                     onCheckedChange = { viewModel.setDriveCoach(it) },
                 )
+            }
+            if (driveCoach) {
+                row {
+                    SwitchSetting(
+                        title = stringResource(R.string.drive_tips_title),
+                        subtitle = stringResource(R.string.drive_tips_desc),
+                        checked = driveTips,
+                        onCheckedChange = { viewModel.setDriveTips(it) },
+                    )
+                }
             }
         }
     }

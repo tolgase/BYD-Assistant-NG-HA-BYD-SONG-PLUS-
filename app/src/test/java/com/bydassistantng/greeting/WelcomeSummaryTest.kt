@@ -76,6 +76,15 @@ class WelcomeSummaryTest {
     }
 
     @Test
+    fun passengersAreWelcomedToo() {
+        val text = welcome(full.copy(passengers = listOf("front passenger seat", "rear left")))
+        assertTrue(text.contains("are 2 passengers too (front passenger seat, rear left)"))
+        assertTrue(text.contains("welcome them warmly as well"))
+        assertFalse(welcome(full.copy(passengers = emptyList())).contains("passenger"))
+        assertFalse(welcome(full).contains("passenger"))
+    }
+
+    @Test
     fun withoutASummaryTheGreetingIsTheClassicOne() {
         val classic = GreetingPrompt.build(GreetingPrompt.PartOfDay.MORNING, GreetingPrompt.TimeOfDay(8, 5), 24, null, false)
         assertTrue(classic.contains("do not ask them anything"))

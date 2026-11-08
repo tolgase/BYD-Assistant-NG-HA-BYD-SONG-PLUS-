@@ -40,6 +40,16 @@ class StatusFactsTest {
     }
 
     @Test
+    fun whoIsOnBoard() {
+        val two = StatusFacts.parse("""{"seats_occupied":{"front_passenger":true,"rear_left":false,"rear_right":true}}""")
+        assertEquals(listOf("front passenger seat", "rear right"), two.passengers)
+        assertTrue(two.hasAny)
+        assertEquals(emptyList<String>(), StatusFacts.parse("""{"seats_occupied":{"front_passenger":false}}""").passengers)
+        // The car named no passenger seat: unknown, not "alone".
+        assertNull(StatusFacts.parse(status).passengers)
+    }
+
+    @Test
     fun anOdometerUnderAnotherName() {
         assertEquals(900.0, StatusFacts.odometer("""{"trip_computer":{"total_odometer":900}}""")!!, 0.001)
         assertNull(StatusFacts.odometer("""{"trip_computer":{"ev_mileage":4100}}"""))

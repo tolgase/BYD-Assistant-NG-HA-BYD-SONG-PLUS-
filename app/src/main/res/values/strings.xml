@@ -476,6 +476,8 @@
     <string name="group_driving">Driving</string>
     <string name="drive_coach_title">Drive coach</string>
     <string name="drive_coach_desc">While the car is on, the assistant follows speed, battery and range (in memory only), so you can ask how you drove over the last 15 or 30 minutes and how to use less energy.</string>
+    <string name="drive_tips_title">Spoken drive tips</string>
+    <string name="drive_tips_desc">Now and then, one short friendly tip while you drive when the drive clearly calls for it (smoother or steadier driving, electric in town), and a reminder to take a break after two hours. At most one every 25 minutes.</string>
     <string name="banner_scene">Scene: %1$s</string>
     <string name="quick_listening">Offline: say a car command</string>
     <string name="quick_not_heard">Nothing heard</string>

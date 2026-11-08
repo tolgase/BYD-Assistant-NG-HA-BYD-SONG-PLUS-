@@ -475,6 +475,8 @@
     <string name="group_driving">Jazda</string>
     <string name="drive_coach_title">Trener jazdy</string>
     <string name="drive_coach_desc">Gdy auto jest włączone, asystent śledzi prędkość, baterię i zasięg (tylko w pamięci), więc możesz zapytać, jak jechałeś przez ostatnie 15 lub 30 minut i jak zużywać mniej energii.</string>
+    <string name="drive_tips_title">Wskazówki głosowe w trakcie jazdy</string>
+    <string name="drive_tips_desc">Od czasu do czasu jedna krótka, przyjazna wskazówka w trakcie jazdy, gdy jazda wyraźnie tego wymaga (płynniej, równiej, na prądzie w mieście), oraz przypomnienie o przerwie po dwóch godzinach. Najwyżej jedna na 25 minut.</string>
     <string name="banner_scene">Scena: %1$s</string>
     <string name="quick_listening">Offline: powiedz polecenie</string>
     <string name="quick_not_heard">Nic nie słychać</string>

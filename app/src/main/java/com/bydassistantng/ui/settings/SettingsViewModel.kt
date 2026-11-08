@@ -137,6 +137,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { preferencesRepository.setDriveCoach(enabled) }
     }
 
+    val driveTips: StateFlow<Boolean> = preferencesRepository.driveTipsSetting
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
+    fun setDriveTips(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setDriveTips(enabled) }
+    }
+
     val greetingSpeaker: StateFlow<VoiceSpeaker> = preferencesRepository.greetingSpeaker
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), VoiceSpeaker.HEADREST)
 

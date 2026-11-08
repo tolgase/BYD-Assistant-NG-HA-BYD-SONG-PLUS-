@@ -475,6 +475,8 @@
     <string name="group_driving">Вождение</string>
     <string name="drive_coach_title">Тренер вождения</string>
     <string name="drive_coach_desc">Пока машина включена, помощник следит за скоростью, батареей и запасом хода (только в памяти), чтобы вы могли спросить, как ехали последние 15 или 30 минут и как расходовать меньше энергии.</string>
+    <string name="drive_tips_title">Голосовые советы за рулём</string>
+    <string name="drive_tips_desc">Время от времени — один короткий дружеский совет в пути, когда поездка явно этого требует (плавнее или ровнее, электричество в городе), и напоминание сделать перерыв через два часа. Не чаще одного раза в 25 минут.</string>
     <string name="banner_scene">Сцена: %1$s</string>
     <string name="quick_listening">Офлайн: скажите команду</string>
     <string name="quick_not_heard">Ничего не слышно</string>

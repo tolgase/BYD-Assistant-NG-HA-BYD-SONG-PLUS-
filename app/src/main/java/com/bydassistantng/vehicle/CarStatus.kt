@@ -46,6 +46,18 @@ object CarStatus {
         State("passenger_heating", "Setting.SET_CO_DRIVING_SEAT_HEAT_STATE", 1335885843),
         State("passenger_ventilation", "Setting.SET_CO_DRIVING_SEAT_VENTILATION_STATE", 1335885840),
     )
+    /**
+     * Song PLUS edition: who is sitting where, on the safety-belt device ([DriverPresence.SEAT_DEVICE_TYPE]). Known by name
+     * only (no number is assumed): a seat this car's table does not name is simply not reported. The values are the ones
+     * recorded on the driver's seat of the same family: 2 occupied, 1 empty.
+     */
+    private val passengerSeats = listOf(
+        State("front_passenger", "Safety.SAFETY_BELT_PASSENGER_COMMAND_FRONT_ROW_SEAT_RIGHT", 0),
+        State("rear_left", "Safety.SAFETY_BELT_PASSENGER_COMMAND_SECOND_ROW_SEAT_LEFT", 0),
+        State("rear_middle", "Safety.SAFETY_BELT_PASSENGER_COMMAND_SECOND_ROW_SEAT_MIDDLE", 0),
+        State("rear_right", "Safety.SAFETY_BELT_PASSENGER_COMMAND_SECOND_ROW_SEAT_RIGHT", 0),
+    )
+
     private val sunroof = State("sunroof", "Bodywork.BODYWORK_MOON_ROOF_OPEN_PERCENT", 1101004808)
     private val sunshade = State("sunshade", "Bodywork.BODYWORK_SUNSHADE_PANEL_PERCENT", 1101004816)
     private val acPower = State("on", "Ac.AC_POWER_STATE", 1077936144)
@@ -120,6 +132,16 @@ object CarStatus {
             // Song PLUS edition: the car's own trip computer, under its own names; absent when the car gives none.
             val trip = runCatching { TripComputer.select(tripComputer()) }.getOrDefault(emptyMap())
             if (trip.isNotEmpty()) put("trip_computer", buildJsonObject { trip.forEach { (k, v) -> put(k, v) } })
+            // Song PLUS edition: which passenger seats are taken; a seat the car gave no clear reading for is left out.
+            val occupied = buildJsonObject {
+                passengerSeats.forEach { s ->
+                    when (value(DriverPresence.SEAT_DEVICE_TYPE, s)) {
+                        DriverPresence.SEAT_OCCUPIED -> put(s.key, true)
+                        DriverPresence.SEAT_EMPTY -> put(s.key, false)
+                    }
+                }
+            }
+            if (occupied.isNotEmpty()) put("seats_occupied", occupied)
             // Song PLUS edition: the speed, for the drive coach. While parked the car answers a "no signal" code instead.
             runCatching { speed()?.toDouble() }.getOrNull()?.takeIf { !it.isNaN() && it in 0.0..300.0 }
                 ?.let { put("speed_kmh", Math.round(it * 10.0) / 10.0) }

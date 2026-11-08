@@ -14,11 +14,13 @@ data class StatusFacts(
     val speedKmh: Double? = null,
     val acOn: Boolean? = null,
     val odometerKm: Double? = null,
+    /** Where passengers sit ("front passenger", "rear left"…); empty when every reported seat is empty; null when unknown. */
+    val passengers: List<String>? = null,
 ) {
     /** Whether the car said anything at all this time. */
     val hasAny: Boolean
         get() = batteryPercent != null || electricRangeKm != null || fuelRangeKm != null || insideCelsius != null ||
-            outsideCelsius != null || speedKmh != null || acOn != null || odometerKm != null
+            outsideCelsius != null || speedKmh != null || acOn != null || odometerKm != null || passengers != null
 
     companion object {
         private const val NUMBER = """(-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)"""
@@ -37,7 +39,23 @@ data class StatusFacts(
                 // The A/C's power is the only "on" in a status reading.
                 acOn = Regex("\"on\"\\s*:\\s*(true|false)").find(json)?.groupValues?.get(1)?.toBoolean(),
                 odometerKm = odometer(json),
+                passengers = passengers(json),
             )
+        }
+
+        private val SEAT_NAMES = mapOf(
+            "front_passenger" to "front passenger seat",
+            "rear_left" to "rear left",
+            "rear_middle" to "rear middle",
+            "rear_right" to "rear right",
+        )
+
+        /** The taken passenger seats, by a name to say aloud; null when the car reported none of the seats. */
+        fun passengers(json: String): List<String>? {
+            val seats = Regex("\"seats_occupied\"\\s*:\\s*\\{([^}]*)\\}").find(json)?.groupValues?.get(1) ?: return null
+            val read = Regex("\"([a-z_]+)\"\\s*:\\s*(true|false)").findAll(seats).map { it.groupValues[1] to (it.groupValues[2] == "true") }.toList()
+            if (read.isEmpty()) return null
+            return read.filter { it.second }.map { SEAT_NAMES[it.first] ?: it.first.replace('_', ' ') }
         }
 
         /**

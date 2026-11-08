@@ -28,6 +28,8 @@ object GreetingPrompt {
         val insideCelsius: Int? = null,
         val outsideCelsius: Int? = null,
         val place: String? = null,
+        /** Where passengers sit; empty = the driver is alone; null = the car did not say. */
+        val passengers: List<String>? = null,
     )
 
     /** One thing to offer for comfort, and the scene that does it. */
@@ -130,6 +132,10 @@ object GreetingPrompt {
             },
         )
         append(" and the time (it is $time on the 24-hour clock; say it the way a person says the time aloud). ")
+        s.passengers?.takeIf { it.isNotEmpty() }?.let { seats ->
+            append("There ${if (seats.size == 1) "is a passenger" else "are ${seats.size} passengers"} too (${seats.joinToString(", ")}): ")
+            append("welcome them warmly as well, by where they sit, so everyone feels welcome for the ride. ")
+        }
 
         val energy = buildList {
             s.batteryPercent?.let { add("the battery is at $it percent") }

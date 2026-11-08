@@ -21,6 +21,8 @@ import com.bydassistantng.navigation.NavigationTool
 import com.bydassistantng.navigation.ReadNavigationTool
 import com.bydassistantng.location.CarLocationTool
 import com.bydassistantng.drive.DriveReportTool
+import com.bydassistantng.drive.RideContext
+import com.bydassistantng.drive.RideStyle
 import com.bydassistantng.quick.QuickCommands
 import com.bydassistantng.quick.SceneTool
 import com.bydassistantng.util.AppLanguage
@@ -259,7 +261,7 @@ object VehicleFunctionDispatcher {
             }
             // Song PLUS edition: the offline layer may already have done this, from the same words, a moment ago.
             if (QuickCommands.wasJustDone(command.id, resolvedValue)) {
-                VehicleDispatchResult.Success("Already done instantly from the driver's words. Do not send it again; tell the user it is done.")
+                VehicleDispatchResult.Success("Already done instantly from the driver's words. Do not send it again; tell the user it is done in two or three words.")
             } else repeatGuard.dispatch(command.id, resolvedValue) {
                 try {
                     controller.dispatch(command, resolvedValue)
@@ -362,6 +364,8 @@ fun voiceAssistantSystemPrompt(
     memory: MemoryContext = MemoryContext(),
     musicHint: Boolean = false,
     identity: AssistantIdentity = AssistantIdentity(),
+    // Song PLUS edition: the ride when the conversation starts, for the assistant's hidden manners (see [RideStyle]).
+    ride: RideContext? = null,
 ): String {
     // A fixed language is a firm rule and is said twice (here and again at the very end): a model that listens in many
     // languages, and was told only once, tends to answer in whichever it heard, which an unclear word can make the wrong one.
@@ -477,6 +481,7 @@ fun voiceAssistantSystemPrompt(
                 ""
             }
             ) +
+        ride?.let { RideStyle.instruction(it) }.orEmpty() +
         languageReminder
 }
 

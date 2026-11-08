@@ -15,6 +15,8 @@ import com.bydassistantng.audio.LivePcmRecorder
 import com.bydassistantng.quick.QuickCommands
 import com.bydassistantng.quick.QuickParser
 import com.bydassistantng.drive.DriveMonitor
+import com.bydassistantng.drive.DriveTipPrompt
+import com.bydassistantng.data.AssistantLanguage
 import com.bydassistantng.vehicle.VehicleDispatchResult
 import com.bydassistantng.vehicle.VehicleQuery
 import com.bydassistantng.vehicle.ShellHelperVehicleController
@@ -105,6 +107,18 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
             enabled = { preferencesRepository.driveCoach.first() && preferencesRepository.vehicleControlEnabled.first() },
             busy = { liveConversationController.inConversation },
             read = { (vehicleController.query(VehicleQuery.CAR_STATUS) as? VehicleDispatchResult.Success)?.note },
+            tipsEnabled = { preferencesRepository.driveTips.first() },
+            // Said like the greeting: same speaker (the driver's headrest where the car has one), same language.
+            speak = { tip ->
+                val wanted = preferencesRepository.greetingSpeaker.first()
+                val speaker = if (wanted == VoiceSpeaker.HEADREST && preferencesRepository.headrestSpeakerPresent.first() == false) {
+                    VoiceSpeaker.CAR
+                } else {
+                    wanted
+                }
+                val language = if (preferencesRepository.assistantLanguage.first() != AssistantLanguage.AUTO) null else AppLanguage.spokenName(this)
+                greet(DriveTipPrompt.build(tip, language), speaker) == GreetResult.STARTED
+            },
         )
         AppLogger.log(TAG, "Connected, watching key $triggerKeyCode")
     }

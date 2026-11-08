@@ -81,6 +81,8 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
             1001 to "android.hardware.bydauto.bodywork.BYDAutoBodyworkDevice",
             1007 to OutsideTemperatureTool.DEVICE_CLASS,
             1023 to "android.hardware.bydauto.setting.BYDAutoSettingDevice",
+            // Song PLUS edition: the safety-belt device, for which passenger seats are taken.
+            DriverPresence.SEAT_DEVICE_TYPE to DriverPresence.SEAT_CLASS,
         ).mapValues { (_, cls) -> runCatching { linked(cls) { it } }.getOrNull() }
         val statistic = runCatching { getOrCreateInstance("android.hardware.bydauto.statistic.BYDAutoStatisticDevice") }.getOrNull()
         val encoded = CarStatus.encode(

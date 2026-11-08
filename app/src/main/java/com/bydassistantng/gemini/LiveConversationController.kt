@@ -23,6 +23,11 @@ import com.bydassistantng.audio.VoiceSensitivity
 import com.bydassistantng.audio.VoiceSpeaker
 import com.bydassistantng.audio.LivePcmRecorder
 import com.bydassistantng.quick.QuickCommands
+import com.bydassistantng.drive.DriveMonitor
+import com.bydassistantng.drive.RideContext
+import com.bydassistantng.drive.RideStyle
+import com.bydassistantng.navigation.NavNotifications
+import com.bydassistantng.navigation.NavText
 import com.bydassistantng.audio.ExteriorVolume
 import com.bydassistantng.audio.PlaySoundOutsideTool
 import com.bydassistantng.audio.SpeakOutsideTool
@@ -110,6 +115,10 @@ private const val REOPEN_DELAY_MS = 500L
 // handle is kept across the drop, so the model still knows what was being talked about once the link returns.
 private const val RECONNECT_WINDOW_MS = 9_000L
 private const val RECONNECT_RETRY_DELAY_MS = 1_200L
+
+// Song PLUS edition: how old the maps app's route and the last look at the seats may be to describe the ride.
+private const val NAV_FRESH_MS = 10 * 60_000L
+private const val PASSENGERS_FRESH_MS = 3 * 60_000L
 
 // The exterior speaker's helper starts this long after the vehicle helper, not beside it.
 private const val HELPER_STAGGER_MS = 1_500L
@@ -585,11 +594,29 @@ class LiveConversationController @Inject constructor(
             keepMapsDisabled = preferencesRepository.clusterKeepMapsDisabled.first(),
         )
         musicHintForSession = preferencesRepository.musicHintEnabled.first()
+        // Song PLUS edition: the ride as it stands, for the assistant's hidden manners (see [RideStyle]). Not for an opening the
+        // assistant speaks itself (the greeting, a drive tip): its session may have been opened ahead and must still match.
+        rideForSession = if (forGreeting) null else currentRide()
+        rideForSession?.let { AppLogger.log(TAG, "Ride: ${RideStyle.mode(it)} ($it)") }
         factsForSession = if (longTermForSession) memory.currentFacts() else emptyList()
         recentForSession = if (shortTermForSession && !forGreeting) memory.recentExchanges() else emptyList()
         if (factsForSession.isNotEmpty() || recentForSession.isNotEmpty()) {
             AppLogger.log(TAG, "Memory: ${factsForSession.size} remembered fact(s), ${recentForSession.size} recent exchange(s) carried in")
         }
+    }
+
+    private var rideForSession: RideContext? = null
+
+    /** Minutes on the road (the drive monitor), minutes to go (the maps app's navigation), and who is on board. */
+    private fun currentRide(): RideContext {
+        val now = SystemClock.elapsedRealtime()
+        val nav = NavNotifications.latest?.takeIf { now - it.atMs <= NAV_FRESH_MS }
+        val seen = DriveMonitor.latest?.takeIf { System.currentTimeMillis() - it.atMs <= PASSENGERS_FRESH_MS }
+        return RideContext(
+            rideMinutes = DriveMonitor.ride.minutes(System.currentTimeMillis()),
+            minutesToGo = nav?.let { NavText.parse(it.lines).minutesLeft },
+            passengers = seen?.facts?.passengers,
+        )
     }
 
     /** A server session opened ahead of a greeting, and what it was built from (it is only used if that still holds). */
@@ -770,6 +797,7 @@ class LiveConversationController @Inject constructor(
                         memory = MemoryContext(tools = longTermForSession, facts = factsForSession, recent = recentForSession),
                         musicHint = musicHintForSession,
                         identity = identityForSession,
+                        ride = rideForSession,
                     ),
                 ),
             ),

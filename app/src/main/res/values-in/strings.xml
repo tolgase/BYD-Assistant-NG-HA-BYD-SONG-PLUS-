@@ -494,6 +494,8 @@
     <string name="group_driving">Berkendara</string>
     <string name="drive_coach_title">Pelatih berkendara</string>
     <string name="drive_coach_desc">Selama mobil menyala, asisten mengikuti kecepatan, baterai, dan jarak tempuh (hanya di memori), sehingga Anda bisa bertanya cara Anda berkendara selama 15 atau 30 menit terakhir dan cara menghemat energi.</string>
+    <string name="drive_tips_title">Tips berkendara lewat suara</string>
+    <string name="drive_tips_desc">Sesekali, satu tips singkat dan ramah saat berkendara bila perjalanan jelas membutuhkannya (lebih halus atau stabil, listrik di dalam kota), dan pengingat untuk istirahat setelah dua jam. Paling banyak satu setiap 25 menit.</string>
     <string name="banner_scene">Suasana: %1$s</string>
     <string name="quick_listening">Luring: ucapkan perintah mobil</string>
     <string name="quick_not_heard">Tidak ada yang terdengar</string>

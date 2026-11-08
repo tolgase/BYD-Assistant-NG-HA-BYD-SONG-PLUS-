@@ -36,32 +36,34 @@ class DriveLog(private val keepMs: Long = KEEP_MS) {
  * what the car reported; one that cannot be worked out is null. Rounded for speaking.
  */
 data class DriveReport(
-    val windowMinutes: Int,
+    val windowMinutes: Int = 15,
     /** How much of the window the samples actually span (the car may have woken more recently). */
-    val coveredMinutes: Double,
-    val samples: Int,
-    val distanceKm: Double?,
+    val coveredMinutes: Double = 0.0,
+    val samples: Int = 0,
+    val distanceKm: Double? = null,
     /** "odometer" when measured by the car, "speed" when added up from the speed samples. */
-    val distanceFrom: String?,
-    val avgMovingSpeedKmh: Double?,
-    val maxSpeedKmh: Double?,
+    val distanceFrom: String? = null,
+    val avgMovingSpeedKmh: Double? = null,
+    val maxSpeedKmh: Double? = null,
     /** Share of the time standing still (0..1). */
-    val stoppedShare: Double?,
-    val stops: Int?,
+    val stoppedShare: Double? = null,
+    val stops: Int? = null,
     /** Average change of speed between samples, km/h per minute: high = stop-and-go or hard acceleration and braking. */
-    val speedChangePerMin: Double?,
-    val batteryUsedPercent: Double?,
-    val electricRangeUsedKm: Double?,
-    val fuelRangeUsedKm: Double?,
+    val speedChangePerMin: Double? = null,
+    val batteryUsedPercent: Double? = null,
+    val electricRangeUsedKm: Double? = null,
+    val fuelRangeUsedKm: Double? = null,
     /** Range used per km actually driven: 1.0 is what the car predicted; above it the drive used more than estimated. */
-    val rangeUsedPerKm: Double?,
-    val batteryPercentPer10Km: Double?,
+    val rangeUsedPerKm: Double? = null,
+    val batteryPercentPer10Km: Double? = null,
     /** Share of the time the A/C was on (0..1). */
-    val acOnShare: Double?,
-    val insideCelsius: Double?,
-    val outsideCelsius: Double?,
+    val acOnShare: Double? = null,
+    val insideCelsius: Double? = null,
+    val outsideCelsius: Double? = null,
     /** False when there is too little to judge (a few minutes at most): the model is told so instead of reading noise. */
-    val enoughData: Boolean,
+    val enoughData: Boolean = false,
+    /** The battery as last read, in percent. */
+    val batteryPercent: Double? = null,
 )
 
 /** Song PLUS edition: turns the drive samples into a report the model can coach from. Pure, unit-tested. */
@@ -137,6 +139,7 @@ object DriveAnalysis {
             insideCelsius = s.lastOrNull { it.facts.insideCelsius != null }?.facts?.insideCelsius,
             outsideCelsius = s.lastOrNull { it.facts.outsideCelsius != null }?.facts?.outsideCelsius,
             enoughData = covered >= MIN_COVERED_MINUTES && s.size >= MIN_SAMPLES,
+            batteryPercent = s.lastOrNull { it.facts.batteryPercent != null }?.facts?.batteryPercent,
         )
     }
 

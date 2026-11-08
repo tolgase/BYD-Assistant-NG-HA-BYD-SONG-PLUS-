@@ -312,6 +312,7 @@ class GreetingCoordinator internal constructor(
             insideCelsius = facts.insideCelsius?.let { Math.round(it).toInt() },
             outsideCelsius = outside ?: facts.outsideCelsius?.let { Math.round(it).toInt() },
             place = where,
+            passengers = facts.passengers,
         )
     }
 

@@ -85,6 +85,7 @@ class PreferencesRepository @Inject constructor(@ApplicationContext context: Con
         val GREETING_SPEAKER = stringPreferencesKey("greeting_speaker")
         val WELCOME_SUMMARY = booleanPreferencesKey("welcome_summary")
         val DRIVE_COACH = booleanPreferencesKey("drive_coach")
+        val DRIVE_TIPS = booleanPreferencesKey("drive_tips")
         val VOICE_SENSITIVITY = intPreferencesKey("voice_sensitivity")
         val LEVEL_GATE_ENABLED = booleanPreferencesKey("level_gate_enabled")
         val MUSIC_HINT_ENABLED = booleanPreferencesKey("music_hint_enabled")
@@ -178,6 +179,13 @@ class PreferencesRepository @Inject constructor(@ApplicationContext context: Con
     val driveCoach: Flow<Boolean> = dataStore.data.map { it[Keys.DRIVE_COACH] ?: true }
     suspend fun setDriveCoach(enabled: Boolean) {
         dataStore.edit { it[Keys.DRIVE_COACH] = enabled }
+    }
+
+    /** Song PLUS edition: now and then, a short spoken tip while driving (and a break after two hours); needs the coach. */
+    val driveTips: Flow<Boolean> = dataStore.data.map { (it[Keys.DRIVE_TIPS] ?: true) && (it[Keys.DRIVE_COACH] ?: true) }
+    val driveTipsSetting: Flow<Boolean> = dataStore.data.map { it[Keys.DRIVE_TIPS] ?: true }
+    suspend fun setDriveTips(enabled: Boolean) {
+        dataStore.edit { it[Keys.DRIVE_TIPS] = enabled }
     }
 
     /**

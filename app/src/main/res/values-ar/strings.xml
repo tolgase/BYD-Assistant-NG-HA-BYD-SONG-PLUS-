@@ -475,6 +475,8 @@
     <string name="group_driving">القيادة</string>
     <string name="drive_coach_title">مدرب القيادة</string>
     <string name="drive_coach_desc">أثناء تشغيل السيارة، يتابع المساعد السرعة والبطارية والمدى (في الذاكرة فقط)، لتسأل كيف قدت في آخر 15 أو 30 دقيقة وكيف توفّر الطاقة.</string>
+    <string name="drive_tips_title">نصائح قيادة صوتية</string>
+    <string name="drive_tips_desc">من حين لآخر، نصيحة قصيرة ولطيفة أثناء القيادة عندما تستدعيها القيادة فعلاً (قيادة أهدأ وأكثر ثباتاً، الكهرباء في المدينة)، وتذكير بأخذ استراحة بعد ساعتين. نصيحة واحدة على الأكثر كل 25 دقيقة.</string>
     <string name="banner_scene">مشهد: %1$s</string>
     <string name="quick_listening">بدون إنترنت: قل أمراً للسيارة</string>
     <string name="quick_not_heard">لم أسمع شيئاً</string>
