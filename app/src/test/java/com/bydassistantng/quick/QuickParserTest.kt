@@ -146,4 +146,17 @@ class QuickParserTest {
         for (w in listOf("البلارة", "البلاره", "هبطلي", "الكليم", "والكليم", "شعل", "عشرين", "ferme", "window")) assertTrue(w, w in words)
         assertTrue(words.size in 300..6000)
     }
+
+    @Test
+    fun phrasesTheCarHeardWithoutTheWordForGlassOrAmbient() {
+        // From the car's log: "حل بالله ليسار" / "حل بلع ليسار" were "open the left one".
+        assertEquals(listOf("window.driver" to "open"), actions("حل ليسار"))
+        assertEquals(listOf("window.passenger" to "close"), actions("سكر اليمين"))
+        assertEquals(listOf("window.rearLeft" to "close", "window.rearRight" to "close"), actions("سكر اللي ورا"))
+        assertEquals(listOf("ambient.color" to "green"), actions("اخضر"))
+        assertEquals(listOf("ac.power" to "on"), actions("هاتلي الكليم"))
+        // Still nothing for words that are no command.
+        assertNull(actions("الانسان"))
+        assertNull(actions("حضر"))
+    }
 }

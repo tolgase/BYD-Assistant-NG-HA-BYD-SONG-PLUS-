@@ -59,23 +59,7 @@ object QuickParser {
 
         if (has(t, *STEERING)) return single("steeringWheel.heating", if (off) "off" else "on")
 
-        if (has(t, *WINDOW)) {
-            val action = windowAction(t) ?: return null
-            val which = when {
-                has(t, *ALL) -> ALL_WINDOWS
-                has(t, *REAR) && has(t, *LEFT) -> listOf("window.rearLeft")
-                has(t, *REAR) && has(t, *RIGHT) -> listOf("window.rearRight")
-                has(t, *REAR) -> listOf("window.rearLeft", "window.rearRight")
-                has(t, *PASSENGER) -> listOf("window.passenger")
-                // "the front glass": both front windows.
-                has(t, *FRONT) && !has(t, *DRIVER) -> listOf("window.driver", "window.passenger")
-                has(t, *DRIVER) -> listOf("window.driver")
-                // "close the windows" means all of them; "open the window" only the driver's.
-                action == "close" -> ALL_WINDOWS
-                else -> listOf("window.driver")
-            }
-            return QuickPlan(which.map { it to action })
-        }
+        if (has(t, *WINDOW)) return windows(t)
 
         if (has(t, *SUNSHADE)) {
             return when {
@@ -128,10 +112,38 @@ object QuickParser {
         }
 
         if (has(t, *VOLUME) && number != null) return single("audio.volume", number.coerceIn(0, 39).toString())
+        // Heard without the word for glass ("حلّ ليسار", "سكّر اللي ورا"): an open/close with a side can only be a window.
+        if (windowAction(t) != null && has(t, *LEFT, *RIGHT, *FRONT, *REAR, *PASSENGER)) return windows(t)
+
         if (has(t, "unmute", "remets le son", "رجع الصوت", "هات الصوت", "رجعلي الصوت")) return single("audio.mediaMute", "unmute")
         if (has(t, "mute", "coupe le son", "silence", "سكت", "اسكت", "قص الصوت", "نحي الصوت", "سكتلي")) return single("audio.mediaMute", "mute")
 
+        // A colour said on its own ("أخضر", "bleu") can only be the ambient light.
+        if (words.size <= 2) colorIn(t)?.let { return single("ambient.color", it) }
+
         return null
+    }
+
+    /** Which windows, and what to do with them; null when no window action was said. */
+    private fun windows(t: String): QuickPlan? {
+        val action = windowAction(t) ?: return null
+        val which = when {
+            has(t, *ALL) -> ALL_WINDOWS
+            has(t, *REAR) && has(t, *LEFT) -> listOf("window.rearLeft")
+            has(t, *REAR) && has(t, *RIGHT) -> listOf("window.rearRight")
+            has(t, *REAR) -> listOf("window.rearLeft", "window.rearRight")
+            has(t, *PASSENGER) -> listOf("window.passenger")
+            // "the front glass": both front windows.
+            has(t, *FRONT) && !has(t, *DRIVER) -> listOf("window.driver", "window.passenger")
+            has(t, *DRIVER) -> listOf("window.driver")
+            // A side on its own: left is the driver's (left-hand drive), right the passenger's.
+            has(t, *LEFT) -> listOf("window.driver")
+            has(t, *RIGHT) -> listOf("window.passenger")
+            // "close the windows" means all of them; "open the window" only the driver's.
+            action == "close" -> ALL_WINDOWS
+            else -> listOf("window.driver")
+        }
+        return QuickPlan(which.map { it to action })
     }
 
     private fun single(id: String, value: String) = QuickPlan(listOf(id to value))
@@ -269,7 +281,7 @@ object QuickParser {
 
     // ── Vocabulary (English, French, Tunisian Derja in Arabic script) ────────────────────────────────
 
-    private val ON = arrayOf("on", "turn on", "switch on", "start", "allume", "active", "mets", "demarre", "شعل", "ولع", "شغل", "حل", "شعللي", "شعلي", "ولعلي", "شغللي", "دور", "دورلي", "خدم", "خدملي", "اخدم", "حط")
+    private val ON = arrayOf("on", "turn on", "switch on", "start", "allume", "active", "mets", "demarre", "شعل", "ولع", "شغل", "حل", "شعللي", "شعلي", "ولعلي", "شغللي", "دور", "دورلي", "خدم", "خدملي", "اخدم", "حط", "هات", "هاتلي", "عطيني", "اعطيني", "ولعها", "شعلها")
     private val OFF = arrayOf("off", "turn off", "switch off", "eteins", "eteint", "coupe", "desactive", "arrete", "طفي", "اطفي", "سكر", "وقف", "طفيلي", "طفيها", "بطل", "بطللي", "قص", "قصلي", "نحي", "نحيلي", "سكرلي")
     private val OPEN = arrayOf("open", "lower", "down", "ouvre", "ouvrir", "ouvert", "baisse", "حل", "افتح", "فتح", "هبط", "حللي", "حلها", "افتحلي", "هبطلي", "نزل", "نزللي", "طيح", "طيحلي")
     private val CLOSE = arrayOf("close", "shut", "raise", "up", "ferme", "fermer", "monte", "سكر", "اغلق", "سد", "طلع", "سكرلي", "سكرها", "بلع", "بلعلي", "طلعلي", "ارفع", "هز", "هزلي")
