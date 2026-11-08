@@ -126,8 +126,8 @@ object QuickParser {
         }
 
         if (has(t, *VOLUME) && number != null) return single("audio.volume", number.coerceIn(0, 39).toString())
-        if (has(t, "unmute", "remets le son", "رجع الصوت")) return single("audio.mediaMute", "unmute")
-        if (has(t, "mute", "coupe le son", "silence", "سكت", "اسكت")) return single("audio.mediaMute", "mute")
+        if (has(t, "unmute", "remets le son", "رجع الصوت", "هات الصوت", "رجعلي الصوت")) return single("audio.mediaMute", "unmute")
+        if (has(t, "mute", "coupe le son", "silence", "سكت", "اسكت", "قص الصوت", "نحي الصوت", "سكتلي")) return single("audio.mediaMute", "mute")
 
         return null
     }
@@ -267,60 +267,64 @@ object QuickParser {
 
     // ── Vocabulary (English, French, Tunisian Derja in Arabic script) ────────────────────────────────
 
-    private val ON = arrayOf("on", "turn on", "switch on", "start", "allume", "active", "mets", "demarre", "شعل", "ولع", "شغل", "حل")
-    private val OFF = arrayOf("off", "turn off", "switch off", "eteins", "eteint", "coupe", "desactive", "arrete", "طفي", "اطفي", "سكر", "وقف")
-    private val OPEN = arrayOf("open", "lower", "down", "ouvre", "ouvrir", "ouvert", "baisse", "حل", "افتح", "فتح", "هبط")
-    private val CLOSE = arrayOf("close", "shut", "raise", "up", "ferme", "fermer", "monte", "سكر", "اغلق", "سد", "طلع")
-    private val HALF = arrayOf("half", "moitie", "a moitie", "نص", "النص")
+    private val ON = arrayOf("on", "turn on", "switch on", "start", "allume", "active", "mets", "demarre", "شعل", "ولع", "شغل", "حل", "شعللي", "شعلي", "ولعلي", "شغللي", "دور", "دورلي", "خدم", "خدملي", "اخدم", "حط")
+    private val OFF = arrayOf("off", "turn off", "switch off", "eteins", "eteint", "coupe", "desactive", "arrete", "طفي", "اطفي", "سكر", "وقف", "طفيلي", "طفيها", "بطل", "بطللي", "قص", "قصلي", "نحي", "نحيلي", "سكرلي")
+    private val OPEN = arrayOf("open", "lower", "down", "ouvre", "ouvrir", "ouvert", "baisse", "حل", "افتح", "فتح", "هبط", "حللي", "حلها", "افتحلي", "هبطلي", "نزل", "نزللي", "طيح", "طيحلي")
+    private val CLOSE = arrayOf("close", "shut", "raise", "up", "ferme", "fermer", "monte", "سكر", "اغلق", "سد", "طلع", "سكرلي", "سكرها", "بلع", "بلعلي", "طلعلي", "ارفع", "هز", "هزلي")
+    private val HALF = arrayOf("half", "moitie", "a moitie", "نص", "النص", "نص نص", "للنص")
     private val VENT = arrayOf("vent", "crack", "a little", "a bit", "entrouvre", "un peu", "aere", "شويه", "شوي")
     private val STOP = arrayOf("stop", "stoppe", "arrete", "وقف")
 
-    private val WINDOW = arrayOf("window", "fenetre", "vitre", "glace", "شباك", "شبابك", "بلار", "فنتر", "فونتر", "الفنيتر")
-    private val ALL = arrayOf("all", "every", "toutes", "tous", "الكل", "كلهم", "الاربعه", "الكلهم")
-    private val DRIVER = arrayOf("driver", "my", "conducteur", "chauffeur", "متاعي", "السايق", "الشوفور")
-    private val PASSENGER = arrayOf("passenger", "passager", "بحذايا", "الراكب", "الاخر", "متاع البحذا")
+    private val WINDOW = arrayOf("window", "fenetre", "vitre", "glace", "شباك", "شبابك", "بلار", "فنتر", "فونتر", "الفنيتر", "البلاره", "بلارات", "فيتر", "الفيتره", "فيترينه", "الشبابك", "الطاقه")
+    private val ALL = arrayOf("all", "every", "toutes", "tous", "الكل", "كلهم", "الاربعه", "الكلهم", "كلهم", "الكلهم", "الكل", "الاربعه", "جميع")
+    private val DRIVER = arrayOf("driver", "my", "conducteur", "chauffeur", "متاعي", "السايق", "الشوفور", "الشيفور", "شيفور", "متاع الشيفور", "قدامي", "من جيهتي")
+    private val PASSENGER = arrayOf("passenger", "passager", "بحذايا", "الراكب", "الاخر", "متاع البحذا", "الي بحذايا", "اللي بحذايا", "الجنب", "الكوبيلوت", "متاع الراكب", "قدام اليمين")
     private val BOTH = arrayOf("both", "les deux", "الزوز", "زوز")
-    private val REAR = arrayOf("rear", "back", "arriere", "lunette", "اللور", "الوراني", "التالي", "الخلف", "اللاتنين")
-    private val LEFT = arrayOf("left", "gauche", "يسار", "اليسار", "الشمال", "ليسار")
-    private val RIGHT = arrayOf("right", "droite", "يمين", "اليمين", "ليمين")
+    private val REAR = arrayOf("rear", "back", "arriere", "lunette", "اللور", "الوراني", "التالي", "الخلف", "اللاتنين", "ورا", "اللوراني", "التاليين", "التالين", "الكراسي التاليه", "من تالي")
+    private val LEFT = arrayOf("left", "gauche", "يسار", "اليسار", "الشمال", "ليسار", "اليسرى", "يسرى", "الشمالي")
+    private val RIGHT = arrayOf("right", "droite", "يمين", "اليمين", "ليمين", "اليمنى", "يمنى", "اليميني")
 
     private val AC = arrayOf(
         "ac", "a c", "air conditioning", "air conditioner", "aircon", "climate", "clim", "climatisation", "climatiseur",
         "كليم", "كليماتيزور", "كليماتيزاسيون", "مكيف", "المكيف", "التكييف", "الكوندسيون",
+        "الكليم", "كليماتيزار", "الكوندي", "البرد", "الكلاماتيزور", "ليكليم",
     )
-    private val TEMPERATURE = arrayOf("temperature", "degree", "degre", "درجه", "درجات", "تمبيراتور", "الحراره")
-    private val FAN = arrayOf("fan", "blower", "ventilateur", "vitesse", "souffle", "الفان", "مروحه", "المروحه", "فونتيلاتور")
-    private val DEFROST = arrayOf("defrost", "demist", "defog", "desembuage", "desembue", "degivrage", "degivre", "ضباب", "البخار", "الندى")
-    private val RECIRC_IN = arrayOf("recirculation", "recycl", "air interieur", "inside air", "هوا داخل", "الهوا الداخلي")
-    private val RECIRC_OUT = arrayOf("outside air", "fresh air", "air exterieur", "air frais", "هوا برا", "الهوا الخارجي")
+    private val TEMPERATURE = arrayOf("temperature", "degree", "degre", "درجه", "درجات", "تمبيراتور", "الحراره", "حراره", "درجه حراره")
+    private val FAN = arrayOf("fan", "blower", "ventilateur", "vitesse", "souffle", "الفان", "مروحه", "المروحه", "فونتيلاتور", "الريح", "ريح", "الفنتيلاتور", "فنتيلاتور", "السرعه متاع الهوا", "قوه الهوا")
+    private val DEFROST = arrayOf("defrost", "demist", "defog", "desembuage", "desembue", "degivrage", "degivre", "ضباب", "البخار", "الندى", "ديفروست", "ضبابه", "البخاريه", "الشبورة")
+    private val RECIRC_IN = arrayOf("recirculation", "recycl", "air interieur", "inside air", "هوا داخل", "الهوا الداخلي", "هوا من داخل", "الريسيركيلاسيون", "سكر الهوا", "دور الهوا")
+    private val RECIRC_OUT = arrayOf("outside air", "fresh air", "air exterieur", "air frais", "هوا برا", "الهوا الخارجي", "هوا من برا", "هوا من الخارج", "حل الهوا")
 
-    private val SEAT = arrayOf("seat", "siege", "fauteuil", "كرسي", "الكرسي", "كراسي", "السياج")
-    private val HEAT = arrayOf("heat", "warm", "chauff", "rechauff", "سخن", "تسخين", "سخان", "دفي", "شوفاج")
-    private val COOL = arrayOf("ventilat", "ventile", "cool", "refroid", "frais", "تهويه", "برد", "فانتيلاسيون", "هوي")
-    private val LOW = arrayOf("low", "faible", "bas", "doux", "minimum", "خفيف", "شويه", "صغير")
-    private val STEERING = arrayOf("steering wheel", "steering", "volant", "فولون", "الفولون", "المقود", "الستيرينق")
+    private val SEAT = arrayOf("seat", "siege", "fauteuil", "كرسي", "الكرسي", "كراسي", "السياج", "فوتاي", "الفوتاي", "الكرسي متاعي")
+    private val HEAT = arrayOf("heat", "warm", "chauff", "rechauff", "سخن", "تسخين", "سخان", "دفي", "شوفاج", "سخون", "سخني", "الشوفاج", "دفيني", "حمي")
+    private val COOL = arrayOf("ventilat", "ventile", "cool", "refroid", "frais", "تهويه", "برد", "فانتيلاسيون", "هوي", "فنتيلاسيون", "برد الكرسي", "هويلي")
+    private val LOW = arrayOf("low", "faible", "bas", "doux", "minimum", "خفيف", "شويه", "صغير", "شويه برك", "على خفيف", "لوطا")
+    private val STEERING = arrayOf("steering wheel", "steering", "volant", "فولون", "الفولون", "المقود", "الستيرينق", "الفولان", "فولان", "الستيرنغ", "الدركسيون")
 
     private val SUNROOF = arrayOf("sunroof", "roof", "toit", "سقف", "السقف")
     private val SUNSHADE = arrayOf("sunshade", "shade", "store", "rideau", "ستار", "الستاره", "الرادو")
-    private val TRUNK = arrayOf("trunk", "boot", "tailgate", "coffre", "hayon", "كوفر", "الكوفر", "صندوق", "الصندوق")
-    private val CABIN_LIGHT = arrayOf("cabin light", "interior light", "reading light", "light", "plafonnier", "lumiere", "الضو", "ضو", "الضوء", "لومير")
+    private val TRUNK = arrayOf("trunk", "boot", "tailgate", "coffre", "hayon", "كوفر", "الكوفر", "صندوق", "الصندوق", "الماله", "الكوفر متاع تالي")
+    private val CABIN_LIGHT = arrayOf("cabin light", "interior light", "reading light", "light", "plafonnier", "lumiere", "الضو", "ضو", "الضوء", "لومير", "الضوء", "الضو متاع داخل", "لامبه", "اللامبه")
     private val AMBIENT = arrayOf("ambient", "ambiance", "atmosphere", "mood light", "led", "الامبيانس", "امبيانس", "الاضاءه", "الضو الملون")
-    private val VOLUME = arrayOf("volume", "son", "الصوت", "صوت", "فوليم")
+    private val VOLUME = arrayOf("volume", "son", "الصوت", "صوت", "فوليم", "الصوت على", "الموسيقى", "السون")
 
     private val SCENE_HOT = arrayOf(
         "i m hot", "im hot", "i am hot", "too hot", "it s hot", "so hot", "cool down", "cool the car", "j ai chaud", "il fait chaud",
         "rafraichi", "refroidi la voiture", "سخانه", "حامي", "نحس بالسخانه", "برد الكرهبه",
+        "نموت بالسخانه", "سخون برشا", "الدنيا سخونه", "بردني", "برد عليا", "سخانه برشا",
     )
     private val SCENE_COLD = arrayOf(
         "i m cold", "im cold", "i am cold", "too cold", "it s cold", "warm up", "warm the car", "j ai froid", "il fait froid",
         "rechauffe la voiture", "بردان", "نحس بالبرد", "فما برد", "سخن الكرهبه",
+        "البرد برشا", "نرعش", "سخني الكرهبه", "دفيني الكرهبه", "قارص",
     )
     private val SCENE_CLOSE_ALL = arrayOf(
         "close everything", "close all", "shut everything", "ferme tout", "tout fermer", "ferme toutes",
         "سكر كل شي", "سكر كلشي", "سكر الكل", "سكر كل حاجه",
+        "سكر كل شيء", "سكر كلش", "بلع كلشي", "سكر كل شي من فضلك", "سكرلي كلشي",
     )
-    private val SCENE_AIR = arrayOf("air out", "air the car", "aere la voiture", "aerer la voiture", "هوي الكرهبه", "خلي الهوا يدخل")
-    private val SCENE_OFF = arrayOf("everything off", "turn everything off", "eteins tout", "coupe tout", "طفي كل شي", "طفي كلشي", "طفي الكل")
+    private val SCENE_AIR = arrayOf("air out", "air the car", "aere la voiture", "aerer la voiture", "هوي الكرهبه", "خلي الهوا يدخل", "هويلي الكرهبه", "حل الهوا للكرهبه")
+    private val SCENE_OFF = arrayOf("everything off", "turn everything off", "eteins tout", "coupe tout", "طفي كل شي", "طفي كلشي", "طفي الكل", "طفي كل شيء", "طفيلي كلشي", "بطل كلشي")
 
     // Leaving the car: tidy the cabin and close the glass. Deliberately not "salut" (also a greeting) or a bare "bye"
     // word that a longer sentence could trip; the phrases here are ones a driver says on the way out.
@@ -329,6 +333,7 @@ object QuickParser {
         // Not "a plus": "mets la clim a plus fort" would close the glass.
         "au revoir", "a bientot", "je pars", "je m en vais",
         "بسلامه", "في امان الله", "باي باي", "راني ماشي", "تصبح على خير",
+        "مع السلامه", "بالسلامه", "نشوفك", "ثمه نمشي", "يزي نمشي",
     )
 
     // "Do that again": repeat the last offline command. Kept narrow so it never swallows a real command.
@@ -336,6 +341,7 @@ object QuickParser {
     private val REPEAT = arrayOf(
         "again", "do it again", "one more time", "repeat", "encore", "refais", "la meme chose",
         "عاود", "عاوده", "مره اخرى", "نفس الحاجه", "كيف قبل",
+        "عاودها", "عاودلي", "مره ثانيه", "زادا مره", "نفس الشي",
     )
 
     private val ALL_WINDOWS = listOf("window.driver", "window.passenger", "window.rearLeft", "window.rearRight")

@@ -466,6 +466,15 @@ object QuickCommands {
         ledger["$commandId=$value"] = t
     }
 
+    /** What [plan] will do, in the app's language, for the banner before it is done: "Window (driver): open". */
+    fun describe(context: Context, plan: QuickPlan): String {
+        plan.scene?.let { return it.label }
+        val lang = runCatching { AppLanguage.locale(context).language }.getOrDefault("en")
+        return plan.actions.mapNotNull { (id, word) ->
+            VehicleCommandRegistry.byId(id)?.let { "${it.labelFor(lang)}: ${word.replace('_', ' ')}" }
+        }.joinToString("  ·  ")
+    }
+
     /**
      * Sends every action of [plan] to the car; says what happened in one line for the banner.
      *

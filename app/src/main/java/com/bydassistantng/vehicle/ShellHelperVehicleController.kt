@@ -23,6 +23,9 @@ import javax.inject.Singleton
 
 private const val TAG = "ShellHelperVehicle"
 private const val HELPER_CLASS = "com.bydassistantng.vehicle.VehicleShellHelper"
+private const val HELPER_PATTERN = "com.bydassistantng.vehicle.[V]ehicleShellHelper"
+/** A reply that fails sooner than this after sending means the helper had already gone (it never read the line). */
+private const val DEAD_STREAM_MS = 1_500L
 
 // Opening the connection and starting the helper JVM: ~1–2s. Generous, since ADB may have to reconnect.
 private const val CONNECT_TIMEOUT_MS = 8_000L
@@ -182,24 +185,51 @@ class ShellHelperVehicleController @Inject constructor(
         val helper = ensureSession() ?: return null
         // The greeting asks about the seat and the door several times a second for a while: it logs what changes itself.
         if (line != "query ${VehicleQuery.DRIVER_PRESENCE.id}") AppLogger.log(TAG, "Helper: $line")
-        val reply = try {
+        try {
             helper.write(line)
+        } catch (e: IOException) {
+            // Never reached the helper: safe to start a new one and send it there.
+            closeSession()
+            return null
+        }
+        val sentAt = System.currentTimeMillis()
+        val reply = try {
             helper.readLineStartingWith(HelperProtocol.RESULT_PREFIX.trim(), timeoutMs)
         } catch (e: IOException) {
             null
         }
         if (reply == null) {
             closeSession()
-            return null
+            // The stream ended at once: the helper had already gone and never read the line, so sending it again is safe.
+            if (System.currentTimeMillis() - sentAt < DEAD_STREAM_MS) return null
+            // The helper took the line and the car did not answer in time. It may still do it later, so it is never sent
+            // again, and the stuck helper is stopped: otherwise every command after it waits in its own stuck helper and
+            // they all happen at once when the car's service wakes up.
+            AppLogger.log(TAG, "The car did not answer \"$line\" in ${timeoutMs}ms — stopping the stuck helper, not sending it again")
+            stopStrayHelpers()
+            return VehicleDispatchResult.Failure(VehicleDispatchError.HELPER_UNAVAILABLE, "The car did not answer in time; the command was not sent again.")
         }
         return HelperProtocol.parse(reply)
             ?: VehicleDispatchResult.Failure(VehicleDispatchError.UNKNOWN, "Unreadable helper reply: ${reply.take(200)}")
+    }
+
+    /** Stops every helper process of this app on the car (a stuck one keeps a command it may still carry out later). */
+    private suspend fun stopStrayHelpers(dadb: Dadb? = null) {
+        val link = dadb ?: AdbHelper.connect(context, CONNECT_TIMEOUT_MS, socketTimeoutMs = 0) ?: return
+        try {
+            // The [V] keeps the pattern from matching the pkill command's own shell.
+            runCatching { link.shell("pkill -f '$HELPER_PATTERN'") }
+        } finally {
+            if (dadb == null) runCatching { link.close() }
+        }
     }
 
     private suspend fun ensureSession(): HelperSession? {
         session?.let { return it }
         val started = System.currentTimeMillis()
         val dadb = AdbHelper.connect(context, CONNECT_TIMEOUT_MS, socketTimeoutMs = 0) ?: return null
+        // Only one helper at a time: one left over from an earlier session could still be holding a command.
+        stopStrayHelpers(dadb)
         val apk = context.applicationInfo.sourceDir
         val helper = try {
             HelperSession(dadb, dadb.openShell("CLASSPATH='$apk' exec app_process /system/bin $HELPER_CLASS --serve 2>&1"))

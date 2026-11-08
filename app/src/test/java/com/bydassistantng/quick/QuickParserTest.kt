@@ -105,4 +105,37 @@ class QuickParserTest {
         assertFalse(QuickParser.isRepeat("open the window"))
         assertFalse(QuickParser.isRepeat(""))
     }
+
+    // ── Tunisian Derja, extended in 1.6.8 ───────────────────────────────────────────────────────
+
+    @Test
+    fun moreTunisianWaysOfSayingIt() {
+        assertEquals(listOf("window.driver" to "open"), actions("هبطلي البلارة"))
+        assertEquals(allWindows.map { it to "close" }, actions("بلع البلارات الكل"))
+        assertEquals(listOf("window.rearLeft" to "open", "window.rearRight" to "open"), actions("حل الشبابك اللي ورا"))
+        assertEquals(listOf("window.passenger" to "close"), actions("سكرلي الشباك اللي بحذايا"))
+        assertEquals(listOf("ac.power" to "on"), actions("شعللي الكليم"))
+        assertEquals(listOf("ac.power" to "off"), actions("بطل الكليم"))
+        assertEquals(listOf("ac.temperature" to "21"), actions("حط الكليم على واحد و عشرين"))
+        assertEquals(listOf("ac.fan" to "4"), actions("الريح على اربعه"))
+        assertEquals(listOf("seat.driver.heating" to "high"), actions("سخني الكرسي متاعي"))
+        assertEquals(listOf("seat.driver.ventilation" to "low"), actions("هويلي الكرسي شويه برك"))
+        assertEquals(listOf("steeringWheel.heating" to "on"), actions("سخن الفولان"))
+        assertEquals(listOf("audio.mediaMute" to "mute"), actions("قص الصوت"))
+        assertEquals(listOf("ac.airSource" to "inside"), actions("دور الهوا"))
+        assertEquals("cool_down", scene("نموت بالسخانه"))
+        assertEquals("warm_up", scene("نرعش"))
+        assertEquals("close_all", scene("سكرلي كلشي"))
+        assertEquals("goodbye", scene("بالسلامة"))
+        assertTrue(QuickParser.isRepeat("عاودها"))
+    }
+
+    @Test
+    fun theNewWordsDoNotTakeOverOtherCommands() {
+        // A seat stays a seat, not the whole-car scene, and the A/C temperature is not "I'm hot".
+        assertEquals(listOf("seat.driver.heating" to "high"), actions("سخن الكرسي"))
+        assertEquals(listOf("ac.temperature" to "20"), actions("حط الكليم على عشرين"))
+        assertEquals(listOf("audio.volume" to "10"), actions("حط الصوت على عشره"))
+        assertNull(actions("شنوه الطقس اليوم"))
+    }
 }

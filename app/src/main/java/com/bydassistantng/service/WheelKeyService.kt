@@ -320,10 +320,15 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
             banner.show(BannerMode.ERROR, labelOverride = label, shownMs = 5_000)
             return
         }
-        banner.show(BannerMode.THINKING, labelOverride = heard)
-        val outcome = QuickCommands.execute(this, plan, vehicleController, force = repeat)
+        // Confirm what was understood before doing it: what was heard, and what the car is about to do.
+        val doing = QuickCommands.describe(this, plan)
+        AppLogger.log(TAG, "Offline: \"$heard\" -> $doing")
+        banner.show(BannerMode.THINKING, labelOverride = "« $heard » → $doing")
+        // The driver asked for it just now, so it is always sent: the 20-second duplicate check is only for Gemini
+        // repeating a command the car already did, and here it would silently skip a retry of one that did not work.
+        val outcome = QuickCommands.execute(this, plan, vehicleController, force = true)
         earcons.play(if (outcome.ok) Earcon.DONE else Earcon.ERROR)
-        banner.show(if (outcome.ok) BannerMode.SPEAKING else BannerMode.ERROR, labelOverride = outcome.summary, shownMs = 5_000)
+        banner.show(if (outcome.ok) BannerMode.SPEAKING else BannerMode.ERROR, labelOverride = "« $heard »  ${outcome.summary}", shownMs = 6_000)
     }
 
     private fun runClassicTurn(file: File) {
