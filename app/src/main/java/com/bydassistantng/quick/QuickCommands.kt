@@ -536,7 +536,8 @@ object QuickCommands {
             val value = VehicleCommandRegistry.resolveValue(command, word) ?: continue
             if (!force && wasJustDone(id, value)) continue
             val result = try {
-                (if (!command.needsCarLink) InAppVehicleController(context) else controller).dispatch(command, value)
+                // Off the main thread: the car link is a socket, and Android refuses network there.
+                withContext(Dispatchers.IO) { (if (!command.needsCarLink) InAppVehicleController(context) else controller).dispatch(command, value) }
             } catch (t: Throwable) {
                 AppLogger.logError(TAG, "quick $id=$word threw", t)
                 VehicleDispatchResult.Failure(com.bydassistantng.vehicle.VehicleDispatchError.UNKNOWN, "${t.javaClass.simpleName}: ${t.message ?: "no detail"}")

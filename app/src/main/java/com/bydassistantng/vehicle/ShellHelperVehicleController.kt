@@ -182,7 +182,14 @@ class ShellHelperVehicleController @Inject constructor(
     /** @return null if the helper couldn't be started or its stream was dead; a result otherwise. */
     private suspend fun send(command: VehicleCommand, value: Int): VehicleDispatchResult? = sendLine("${command.id} $value")
 
-    private suspend fun sendLine(line: String, timeoutMs: Long = COMMAND_TIMEOUT_MS): VehicleDispatchResult? {
+    /**
+     * Every exchange with the car runs on an I/O thread, whoever asks: the offline commands are started from the wheel
+     * button's main thread, and Android refuses network (the ADB socket) there with NetworkOnMainThreadException.
+     */
+    private suspend fun sendLine(line: String, timeoutMs: Long = COMMAND_TIMEOUT_MS): VehicleDispatchResult? =
+        withContext(Dispatchers.IO) { sendLineOnIo(line, timeoutMs) }
+
+    private suspend fun sendLineOnIo(line: String, timeoutMs: Long): VehicleDispatchResult? {
         val helper = ensureSession() ?: return null
         // The greeting asks about the seat and the door several times a second for a while: it logs what changes itself.
         if (line != "query ${VehicleQuery.DRIVER_PRESENCE.id}") AppLogger.log(TAG, "Helper: $line")
@@ -226,7 +233,9 @@ class ShellHelperVehicleController @Inject constructor(
     }
 
     /** Stops every helper process of this app on the car (a stuck one keeps a command it may still carry out later). */
-    private suspend fun stopStrayHelpers(dadb: Dadb? = null) {
+    private suspend fun stopStrayHelpers(dadb: Dadb? = null): Unit = withContext(Dispatchers.IO) { stopStrayHelpersOnIo(dadb) }
+
+    private suspend fun stopStrayHelpersOnIo(dadb: Dadb?) {
         val link = dadb ?: AdbHelper.connect(context, CONNECT_TIMEOUT_MS, socketTimeoutMs = 0) ?: return
         try {
             // The [V] keeps the pattern from matching the pkill command's own shell.
@@ -236,8 +245,9 @@ class ShellHelperVehicleController @Inject constructor(
         }
     }
 
-    private suspend fun ensureSession(): HelperSession? {
-        session?.let { return it }
+    private suspend fun ensureSession(): HelperSession? = withContext(Dispatchers.IO) { session ?: startSession() }
+
+    private suspend fun startSession(): HelperSession? {
         val started = System.currentTimeMillis()
         val dadb = AdbHelper.connect(context, CONNECT_TIMEOUT_MS, socketTimeoutMs = 0) ?: return null
         // Only one helper at a time: one left over from an earlier session could still be holding a command.
