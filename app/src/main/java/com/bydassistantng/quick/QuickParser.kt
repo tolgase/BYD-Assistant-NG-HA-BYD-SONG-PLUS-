@@ -67,6 +67,8 @@ object QuickParser {
                 has(t, *REAR) && has(t, *RIGHT) -> listOf("window.rearRight")
                 has(t, *REAR) -> listOf("window.rearLeft", "window.rearRight")
                 has(t, *PASSENGER) -> listOf("window.passenger")
+                // "the front glass": both front windows.
+                has(t, *FRONT) && !has(t, *DRIVER) -> listOf("window.driver", "window.passenger")
                 has(t, *DRIVER) -> listOf("window.driver")
                 // "close the windows" means all of them; "open the window" only the driver's.
                 action == "close" -> ALL_WINDOWS
@@ -279,6 +281,7 @@ object QuickParser {
     private val ALL = arrayOf("all", "every", "toutes", "tous", "الكل", "كلهم", "الاربعه", "الكلهم", "كلهم", "الكلهم", "الكل", "الاربعه", "جميع")
     private val DRIVER = arrayOf("driver", "my", "conducteur", "chauffeur", "متاعي", "السايق", "الشوفور", "الشيفور", "شيفور", "متاع الشيفور", "قدامي", "من جيهتي")
     private val PASSENGER = arrayOf("passenger", "passager", "بحذايا", "الراكب", "الاخر", "متاع البحذا", "الي بحذايا", "اللي بحذايا", "الجنب", "الكوبيلوت", "متاع الراكب", "قدام اليمين")
+    private val FRONT = arrayOf("front", "avant", "القدام", "قدام", "القدامين", "اللي قدام")
     private val BOTH = arrayOf("both", "les deux", "الزوز", "زوز")
     private val REAR = arrayOf("rear", "back", "arriere", "lunette", "اللور", "الوراني", "التالي", "الخلف", "اللاتنين", "ورا", "اللوراني", "التاليين", "التالين", "الكراسي التاليه", "من تالي")
     private val LEFT = arrayOf("left", "gauche", "يسار", "اليسار", "الشمال", "ليسار", "اليسرى", "يسرى", "الشمالي")
@@ -343,6 +346,35 @@ object QuickParser {
         "عاود", "عاوده", "مره اخرى", "نفس الحاجه", "كيف قبل",
         "عاودها", "عاودلي", "مره ثانيه", "زادا مره", "نفس الشي",
     )
+
+    /**
+     * Every word the phrase book knows, in the spellings the offline recognizer writes (with and without the article,
+     * ة as well as ه), for a recognizer limited to them: it then hears "هبطلي البلارة" rather than a near-sounding word
+     * the phrase book cannot use. Arabic words also get the "and" and "the" prefixes the recognizer writes onto them.
+     */
+    fun vocabulary(): Set<String> {
+        val phrases = listOf(
+            ON, OFF, OPEN, CLOSE, HALF, VENT, STOP, WINDOW, ALL, DRIVER, PASSENGER, FRONT, BOTH, REAR, LEFT, RIGHT, AC, TEMPERATURE,
+            FAN, DEFROST, RECIRC_IN, RECIRC_OUT, SEAT, HEAT, COOL, LOW, STEERING, SUNROOF, SUNSHADE, TRUNK, CABIN_LIGHT, AMBIENT,
+            VOLUME, SCENE_HOT, SCENE_COLD, SCENE_CLOSE_ALL, SCENE_AIR, SCENE_OFF, SCENE_GOODBYE, REPEAT, EXTRA_WORDS,
+        ).flatMap { it.toList() } + COLORS.flatMap { it.second.toList() } + NUMBER_WORDS.keys
+        val words = LinkedHashSet<String>()
+        for (phrase in phrases) for (w in phrase.lowercase().split(' ', '-', '\'')) {
+            if (w.isBlank()) continue
+            words += w
+            if (w.any { it in '؀'..'ۿ' }) {
+                val bare = w.removePrefix("ال")
+                for (form in listOf(bare, "ال$bare", "و$bare", "وال$bare")) {
+                    words += form
+                    if (form.endsWith('ه')) words += form.dropLast(1) + 'ة'
+                }
+            }
+        }
+        return words
+    }
+
+    // Small words said around commands, so the limited recognizer has somewhere to put them.
+    private val EXTRA_WORDS = arrayOf("the", "la", "le", "les", "de", "du", "على", "عل", "في", "من", "اللي", "الي", "متاع", "يا", "برشا", "شويه")
 
     private val ALL_WINDOWS = listOf("window.driver", "window.passenger", "window.rearLeft", "window.rearRight")
 

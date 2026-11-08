@@ -142,8 +142,15 @@ object VehicleShellHelper {
         return try {
             runBlocking { controller().dispatch(command, value) }
         } catch (e: IllegalStateException) {
-            // VehicleSafety.assertDispatchAllowed rejecting a blocked domain.
-            VehicleDispatchResult.Blocked(e.message ?: "blocked")
+            val message = e.message
+            if (message != null && message.startsWith("Refusing to dispatch")) {
+                // VehicleSafety.assertDispatchAllowed rejecting a blocked domain.
+                VehicleDispatchResult.Blocked(message)
+            } else {
+                // Anything else is a fault, not a safety refusal: say where it came from, for the log.
+                val at = e.stackTrace.firstOrNull()?.let { " at ${it.className.substringAfterLast('.')}.${it.methodName}:${it.lineNumber}" } ?: ""
+                VehicleDispatchResult.Failure(VehicleDispatchError.UNKNOWN, "$e$at")
+            }
         }
     }
 

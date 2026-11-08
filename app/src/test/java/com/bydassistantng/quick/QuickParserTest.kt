@@ -138,4 +138,12 @@ class QuickParserTest {
         assertEquals(listOf("audio.volume" to "10"), actions("حط الصوت على عشره"))
         assertNull(actions("شنوه الطقس اليوم"))
     }
+
+    @Test
+    fun theFrontGlassIsBothFrontWindowsAndTheLimitedRecognizerKnowsTheWords() {
+        assertEquals(listOf("window.driver" to "open", "window.passenger" to "open"), actions("حل البلار القدام"))
+        val words = QuickParser.vocabulary()
+        for (w in listOf("البلارة", "البلاره", "هبطلي", "الكليم", "والكليم", "شعل", "عشرين", "ferme", "window")) assertTrue(w, w in words)
+        assertTrue(words.size in 300..6000)
+    }
 }

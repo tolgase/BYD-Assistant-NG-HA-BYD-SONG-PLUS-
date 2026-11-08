@@ -18,6 +18,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -187,16 +188,27 @@ class ShellHelperVehicleController @Inject constructor(
         if (line != "query ${VehicleQuery.DRIVER_PRESENCE.id}") AppLogger.log(TAG, "Helper: $line")
         try {
             helper.write(line)
-        } catch (e: IOException) {
-            // Never reached the helper: safe to start a new one and send it there.
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Never reached the helper (its stream was closed): safe to start a new one and send it there.
+            AppLogger.log(TAG, "Helper stream unusable (${e.javaClass.simpleName}) — starting a new one")
             closeSession()
             return null
         }
         val sentAt = System.currentTimeMillis()
         val reply = try {
             helper.readLineStartingWith(HelperProtocol.RESULT_PREFIX.trim(), timeoutMs)
-        } catch (e: IOException) {
-            null
+        } catch (e: CancellationException) {
+            closeSession()
+            throw e
+        } catch (e: Exception) {
+            // Anything else from the stream: the reply may still come later, and must never be read as the answer to the
+            // next command (every answer after it would be one behind). This session is done; the line is not sent again.
+            AppLogger.logError(TAG, "Reading the helper's answer to \"$line\" failed", e)
+            closeSession()
+            stopStrayHelpers()
+            return VehicleDispatchResult.Failure(VehicleDispatchError.HELPER_UNAVAILABLE, "The car link failed while waiting (${e.javaClass.simpleName}); not sent again.")
         }
         if (reply == null) {
             closeSession()
@@ -273,7 +285,11 @@ internal class HelperSession(private val dadb: Dadb, private val stream: AdbShel
     private val buffer = StringBuilder()
     private val watchdogScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    fun write(line: String) = stream.write(line + "\n")
+    /** Sends one line. Anything left unread from before is dropped first, so an old answer is never taken for this one's. */
+    fun write(line: String) {
+        buffer.setLength(0)
+        stream.write(line + "\n")
+    }
 
     /**
      * Reads helper output until a line starting with [prefix] arrives. Returns null if the stream

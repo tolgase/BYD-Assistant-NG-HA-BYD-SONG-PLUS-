@@ -275,14 +275,38 @@ object QuickCommands {
 
     // ── Offline turn ────────────────────────────────────────────────────────────────────────────
 
-    /** Listens for one phrase (up to [timeoutMs]) and returns what was said, or null when nothing was understood. */
+    /** The phrase book's words as a Vosk grammar, with "[unk]" for anything else; built once per run. */
+    private val grammar: String by lazy {
+        org.json.JSONArray((QuickParser.vocabulary() + "[unk]").toList()).toString()
+    }
+
+    /**
+     * Listens for one phrase (up to [timeoutMs]) and returns what was said, or null when nothing was understood.
+     *
+     * Two recognizers hear the same audio: one free, and one limited to the phrase book's words (and the driver's learned
+     * phrases), which is far less likely to turn "هبطلي البلارة" into a word the phrase book cannot use. The limited one wins
+     * when what it heard is a command; otherwise the free one's text is used, as before, so nothing that worked is lost.
+     */
     suspend fun listenOnce(context: Context, recorder: LivePcmRecorder, timeoutMs: Long = 7_000): String? {
         val m = loadModel(context) ?: return null
         val recognizer = Recognizer(m, SAMPLE_RATE)
+        val limited = runCatching {
+            val learnedWords = learnedList(context).flatMap { it.phrase.split(' ') }.filter { it.isNotBlank() }
+            val words = if (learnedWords.isEmpty()) grammar else
+                org.json.JSONArray((QuickParser.vocabulary() + learnedWords + "[unk]").toList()).toString()
+            Recognizer(m, SAMPLE_RATE, words)
+        }.onFailure { AppLogger.logError(TAG, "Limited recognizer unavailable", it) }.getOrNull()
         val heard = CompletableDeferred<String>()
+        var limitedText = ""
         val chunks = Channel<ByteArray>(Channel.UNLIMITED)
         val worker = scope.launch {
             for (chunk in chunks) {
+                limited?.let { l ->
+                    if (l.acceptWaveForm(chunk, chunk.size)) {
+                        val text = clean(textOf(l.result))
+                        if (text.isNotEmpty()) limitedText = text
+                    }
+                }
                 if (recognizer.acceptWaveForm(chunk, chunk.size)) {
                     val text = textOf(recognizer.result)
                     if (text.isNotEmpty()) {
@@ -295,17 +319,31 @@ object QuickCommands {
         if (!recorder.start { chunks.trySend(it) }) {
             worker.cancel()
             recognizer.close()
+            limited?.close()
             return null
         }
         val text = withTimeoutOrNull(timeoutMs) { heard.await() }
         recorder.stop()
         chunks.close()
         worker.join()
-        val final = text ?: textOf(recognizer.finalResult).takeIf { it.isNotEmpty() }
+        val free = text ?: textOf(recognizer.finalResult).takeIf { it.isNotEmpty() }
         recognizer.close()
-        AppLogger.log(TAG, "Offline heard: ${final ?: "(nothing)"}")
-        return final
+        if (limited != null) {
+            if (limitedText.isEmpty()) limitedText = clean(textOf(limited.finalResult))
+            limited.close()
+        }
+        val chosen = when {
+            limitedText.isNotEmpty() && QuickParser.parse(limitedText) != null -> limitedText
+            free != null -> free
+            limitedText.isNotEmpty() -> limitedText
+            else -> null
+        }
+        AppLogger.log(TAG, "Offline heard: ${free ?: "(nothing)"} | limited: ${limitedText.ifEmpty { "(nothing)" }} -> using: ${chosen ?: "(nothing)"}")
+        return chosen
     }
+
+    /** The limited recognizer writes "[unk]" for a word outside the phrase book: drop it. */
+    private fun clean(text: String): String = text.split(' ').filter { it.isNotBlank() && it != "[unk]" }.joinToString(" ")
 
     // ── Online tap (the first phrase of a Live conversation) ────────────────────────────────────────
 
@@ -500,7 +538,8 @@ object QuickCommands {
             val result = try {
                 (if (!command.needsCarLink) InAppVehicleController(context) else controller).dispatch(command, value)
             } catch (t: Throwable) {
-                VehicleDispatchResult.Blocked(t.message ?: "blocked")
+                AppLogger.logError(TAG, "quick $id=$word threw", t)
+                VehicleDispatchResult.Failure(com.bydassistantng.vehicle.VehicleDispatchError.UNKNOWN, "${t.javaClass.simpleName}: ${t.message ?: "no detail"}")
             }
             val ok = result is VehicleDispatchResult.Success
             if (ok) remember(id, value) else allOk = false
