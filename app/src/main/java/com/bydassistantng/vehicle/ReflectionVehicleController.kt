@@ -102,6 +102,12 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
                         .associate { m -> m.name to runCatching { m.invoke(s) as? Number }.getOrNull() }
                 }.orEmpty()
             },
+            // Song PLUS edition: the speed, as the drive-mode check reads it, for the drive coach.
+            speed = {
+                runCatching {
+                    getOrCreateInstance(SPEED_DEVICE_CLASS)?.let { d -> d.javaClass.getMethod("getCurrentSpeed").invoke(d) as? Number }
+                }.getOrNull()
+            },
         )
         VehicleDispatchResult.Success(encoded)
     } catch (t: Throwable) {
@@ -749,6 +755,9 @@ class ReflectionVehicleController(private val context: Context) : VehicleControl
         private const val AC_UNIT_NAME = "Ac.AC_TEMPERATURE_UNIT"
         private const val AC_UNIT_ID = 1077936167
         internal const val AC_DEVICE_CLASS = "android.hardware.bydauto.ac.BYDAutoAcDevice"
+
+        /** Song PLUS edition: the speed device, the same one [DriveModeCommand] checks the speed on. */
+        private const val SPEED_DEVICE_CLASS = "android.hardware.bydauto.speed.BYDAutoSpeedDevice"
 
         // Matches com.byd.ac.IBydAcService.DESCRIPTOR in the car's own /system/framework/com.byd.ac.jar.
         private const val AC_MASTER_INTERFACE_DESCRIPTOR = AcService.MASTER_DESCRIPTOR

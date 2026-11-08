@@ -82,6 +82,7 @@ object CarStatus {
         raw: (Int, Int) -> Int? = read,
         statistic: (String) -> Number?,
         tripComputer: () -> Map<String, Number?> = { emptyMap() },
+        speed: () -> Number? = { null },
     ): String {
         // A verified number of 0 means there is none: the state is known by name alone, so a car whose table does not
         // carry that name simply has no reading for it rather than a read of feature 0.
@@ -119,6 +120,9 @@ object CarStatus {
             // Song PLUS edition: the car's own trip computer, under its own names; absent when the car gives none.
             val trip = runCatching { TripComputer.select(tripComputer()) }.getOrDefault(emptyMap())
             if (trip.isNotEmpty()) put("trip_computer", buildJsonObject { trip.forEach { (k, v) -> put(k, v) } })
+            // Song PLUS edition: the speed, for the drive coach. While parked the car answers a "no signal" code instead.
+            runCatching { speed()?.toDouble() }.getOrNull()?.takeIf { !it.isNaN() && it in 0.0..300.0 }
+                ?.let { put("speed_kmh", Math.round(it * 10.0) / 10.0) }
         }.toString()
     }
 

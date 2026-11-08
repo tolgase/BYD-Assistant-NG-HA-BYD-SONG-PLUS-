@@ -464,6 +464,17 @@
     <string name="dialect_tunisian">Tunezyjski (dardża)</string>
     <string name="banner_car_status">Odczyt stanu auta</string>
     <string name="banner_navigation_read">Odczytuję trasę</string>
+    <string name="banner_location">Ustalam, gdzie jest auto</string>
+    <string name="banner_drive_report">Analizuję jazdę</string>
+    <string name="location_title">Lokalizacja dla pogody</string>
+    <string name="location_desc">Asystent wie, w jakim mieście jest auto — dla pogody i miejsc w pobliżu. Używa tylko pozycji, którą auto już zna: nic nie jest śledzone ani zapisywane.</string>
+    <string name="location_allow">Zezwól</string>
+    <string name="location_allowed">Dozwolone</string>
+    <string name="welcome_summary_title">Podsumowanie powitalne</string>
+    <string name="welcome_summary_desc">Gdy wsiadasz: bateria, zasięg elektryczny i na paliwie, temperatura w środku i na zewnątrz, dzisiejsza pogoda oraz propozycja schłodzenia lub ogrzania kabiny, gdy trzeba.</string>
+    <string name="group_driving">Jazda</string>
+    <string name="drive_coach_title">Trener jazdy</string>
+    <string name="drive_coach_desc">Gdy auto jest włączone, asystent śledzi prędkość, baterię i zasięg (tylko w pamięci), więc możesz zapytać, jak jechałeś przez ostatnie 15 lub 30 minut i jak zużywać mniej energii.</string>
     <string name="banner_scene">Scena: %1$s</string>
     <string name="quick_listening">Offline: powiedz polecenie</string>
     <string name="quick_not_heard">Nic nie słychać</string>

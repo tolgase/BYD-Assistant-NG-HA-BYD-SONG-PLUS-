@@ -464,6 +464,17 @@
     <string name="dialect_tunisian">Тунисский (дарджа)</string>
     <string name="banner_car_status">Считываю состояние машины</string>
     <string name="banner_navigation_read">Читаю маршрут</string>
+    <string name="banner_location">Определяю, где машина</string>
+    <string name="banner_drive_report">Смотрю на поездку</string>
+    <string name="location_title">Местоположение для погоды</string>
+    <string name="location_desc">Помощник узнаёт, в каком городе машина, — для погоды и мест поблизости. Используется только позиция, которую машина уже знает: ничего не отслеживается и не сохраняется.</string>
+    <string name="location_allow">Разрешить</string>
+    <string name="location_allowed">Разрешено</string>
+    <string name="welcome_summary_title">Приветственная сводка</string>
+    <string name="welcome_summary_desc">Когда вы садитесь: заряд батареи, запас хода на электричестве и топливе, температура внутри и снаружи, погода на сегодня и предложение охладить или прогреть салон, если нужно.</string>
+    <string name="group_driving">Вождение</string>
+    <string name="drive_coach_title">Тренер вождения</string>
+    <string name="drive_coach_desc">Пока машина включена, помощник следит за скоростью, батареей и запасом хода (только в памяти), чтобы вы могли спросить, как ехали последние 15 или 30 минут и как расходовать меньше энергии.</string>
     <string name="banner_scene">Сцена: %1$s</string>
     <string name="quick_listening">Офлайн: скажите команду</string>
     <string name="quick_not_heard">Ничего не слышно</string>

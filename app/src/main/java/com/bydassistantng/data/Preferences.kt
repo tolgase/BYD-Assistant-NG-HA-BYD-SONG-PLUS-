@@ -83,6 +83,8 @@ class PreferencesRepository @Inject constructor(@ApplicationContext context: Con
         val HEADREST_SPEAKER_PRESENT = booleanPreferencesKey("headrest_speaker_present")
         val GREETING_ENABLED = booleanPreferencesKey("greeting_enabled")
         val GREETING_SPEAKER = stringPreferencesKey("greeting_speaker")
+        val WELCOME_SUMMARY = booleanPreferencesKey("welcome_summary")
+        val DRIVE_COACH = booleanPreferencesKey("drive_coach")
         val VOICE_SENSITIVITY = intPreferencesKey("voice_sensitivity")
         val LEVEL_GATE_ENABLED = booleanPreferencesKey("level_gate_enabled")
         val MUSIC_HINT_ENABLED = booleanPreferencesKey("music_hint_enabled")
@@ -160,9 +162,22 @@ class PreferencesRepository @Inject constructor(@ApplicationContext context: Con
      * Whether the assistant says hello by itself when the car has woken, the driver has sat down and the driver's door has
      * shut. Off by default: it is the one thing the assistant does without being asked.
      */
-    val greetingEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.GREETING_ENABLED] ?: false }
+    // Song PLUS edition: on unless switched off — the driver wants the welcome when getting in without setting it up.
+    val greetingEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.GREETING_ENABLED] ?: true }
     suspend fun setGreetingEnabled(enabled: Boolean) {
         dataStore.edit { it[Keys.GREETING_ENABLED] = enabled }
+    }
+
+    /** Song PLUS edition: the greeting is a summary of the car (energy, temperatures, weather, a comfort offer). */
+    val welcomeSummary: Flow<Boolean> = dataStore.data.map { it[Keys.WELCOME_SUMMARY] ?: true }
+    suspend fun setWelcomeSummary(enabled: Boolean) {
+        dataStore.edit { it[Keys.WELCOME_SUMMARY] = enabled }
+    }
+
+    /** Song PLUS edition: watch the drive (in memory only) so the assistant can coach on the last 15 or 30 minutes. */
+    val driveCoach: Flow<Boolean> = dataStore.data.map { it[Keys.DRIVE_COACH] ?: true }
+    suspend fun setDriveCoach(enabled: Boolean) {
+        dataStore.edit { it[Keys.DRIVE_COACH] = enabled }
     }
 
     /**

@@ -483,6 +483,17 @@
     <string name="dialect_tunisian">Tunisia (Derja)</string>
     <string name="banner_car_status">Membaca status mobil</string>
     <string name="banner_navigation_read">Membaca rute</string>
+    <string name="banner_location">Mencari lokasi mobil</string>
+    <string name="banner_drive_report">Melihat perjalanan Anda</string>
+    <string name="location_title">Lokasi untuk cuaca</string>
+    <string name="location_desc">Asisten tahu mobil ada di kota mana, untuk cuaca dan tempat terdekat. Hanya memakai posisi yang sudah diketahui mobil: tidak ada yang dilacak atau disimpan.</string>
+    <string name="location_allow">Izinkan</string>
+    <string name="location_allowed">Diizinkan</string>
+    <string name="welcome_summary_title">Ringkasan sambutan</string>
+    <string name="welcome_summary_desc">Saat Anda masuk: baterai, jarak tempuh listrik dan bensin, suhu di dalam dan di luar, cuaca hari ini, dan tawaran mendinginkan atau menghangatkan kabin bila perlu.</string>
+    <string name="group_driving">Berkendara</string>
+    <string name="drive_coach_title">Pelatih berkendara</string>
+    <string name="drive_coach_desc">Selama mobil menyala, asisten mengikuti kecepatan, baterai, dan jarak tempuh (hanya di memori), sehingga Anda bisa bertanya cara Anda berkendara selama 15 atau 30 menit terakhir dan cara menghemat energi.</string>
     <string name="banner_scene">Suasana: %1$s</string>
     <string name="quick_listening">Luring: ucapkan perintah mobil</string>
     <string name="quick_not_heard">Tidak ada yang terdengar</string>

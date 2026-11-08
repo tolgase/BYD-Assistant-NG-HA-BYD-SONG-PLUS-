@@ -464,6 +464,17 @@
     <string name="dialect_tunisian">التونسية (الدارجة)</string>
     <string name="banner_car_status">جارٍ قراءة حالة السيارة</string>
     <string name="banner_navigation_read">قراءة المسار</string>
+    <string name="banner_location">تحديد مكان السيارة</string>
+    <string name="banner_drive_report">مراجعة قيادتك</string>
+    <string name="location_title">الموقع لحالة الطقس</string>
+    <string name="location_desc">يعرّف المساعد بالمدينة التي توجد فيها السيارة، لحالة الطقس والأماكن القريبة. يستعمل فقط الموقع الذي تعرفه السيارة: لا تتبّع ولا حفظ.</string>
+    <string name="location_allow">السماح</string>
+    <string name="location_allowed">مسموح</string>
+    <string name="welcome_summary_title">ملخص الترحيب</string>
+    <string name="welcome_summary_desc">عند ركوبك: البطارية، المدى الكهربائي ومدى الوقود، درجة الحرارة داخل السيارة وخارجها، طقس اليوم، واقتراح لتبريد المقصورة أو تدفئتها عند الحاجة.</string>
+    <string name="group_driving">القيادة</string>
+    <string name="drive_coach_title">مدرب القيادة</string>
+    <string name="drive_coach_desc">أثناء تشغيل السيارة، يتابع المساعد السرعة والبطارية والمدى (في الذاكرة فقط)، لتسأل كيف قدت في آخر 15 أو 30 دقيقة وكيف توفّر الطاقة.</string>
     <string name="banner_scene">مشهد: %1$s</string>
     <string name="quick_listening">بدون إنترنت: قل أمراً للسيارة</string>
     <string name="quick_not_heard">لم أسمع شيئاً</string>

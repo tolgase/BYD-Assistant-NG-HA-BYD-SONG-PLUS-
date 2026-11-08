@@ -14,6 +14,9 @@ import com.bydassistantng.audio.Earcons
 import com.bydassistantng.audio.LivePcmRecorder
 import com.bydassistantng.quick.QuickCommands
 import com.bydassistantng.quick.QuickParser
+import com.bydassistantng.drive.DriveMonitor
+import com.bydassistantng.vehicle.VehicleDispatchResult
+import com.bydassistantng.vehicle.VehicleQuery
 import com.bydassistantng.vehicle.ShellHelperVehicleController
 import com.bydassistantng.audio.VoiceSpeaker
 import com.bydassistantng.audio.TextToSpeechEngine
@@ -96,6 +99,13 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
         scope.launch { preferencesRepository.triggerKeyCode.collect { triggerKeyCode = it } }
         // Load the offline speech model now, so the first command does not wait for it.
         QuickCommands.warmUp(this)
+        // Song PLUS edition: follow the drive for the drive coach (in memory only; skipped during a conversation).
+        DriveMonitor.start(
+            scope = scope,
+            enabled = { preferencesRepository.driveCoach.first() && preferencesRepository.vehicleControlEnabled.first() },
+            busy = { liveConversationController.inConversation },
+            read = { (vehicleController.query(VehicleQuery.CAR_STATUS) as? VehicleDispatchResult.Success)?.note },
+        )
         AppLogger.log(TAG, "Connected, watching key $triggerKeyCode")
     }
 
@@ -132,6 +142,7 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
         banner.release()
         audioRecorder.cancel()
         liveConversationController.close()
+        DriveMonitor.stop()
         scope.cancel()
         super.onDestroy()
     }

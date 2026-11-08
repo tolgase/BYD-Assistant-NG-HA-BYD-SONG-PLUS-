@@ -117,10 +117,24 @@ class SettingsViewModel @Inject constructor(
     }
 
     val greetingEnabled: StateFlow<Boolean> = preferencesRepository.greetingEnabled
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
     fun setGreetingEnabled(enabled: Boolean) {
         viewModelScope.launch { preferencesRepository.setGreetingEnabled(enabled) }
+    }
+
+    val welcomeSummary: StateFlow<Boolean> = preferencesRepository.welcomeSummary
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
+    fun setWelcomeSummary(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setWelcomeSummary(enabled) }
+    }
+
+    val driveCoach: StateFlow<Boolean> = preferencesRepository.driveCoach
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
+    fun setDriveCoach(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setDriveCoach(enabled) }
     }
 
     val greetingSpeaker: StateFlow<VoiceSpeaker> = preferencesRepository.greetingSpeaker

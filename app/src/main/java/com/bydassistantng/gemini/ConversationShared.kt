@@ -19,6 +19,8 @@ import com.bydassistantng.media.MediaControlTool
 import com.bydassistantng.media.PlayMediaTool
 import com.bydassistantng.navigation.NavigationTool
 import com.bydassistantng.navigation.ReadNavigationTool
+import com.bydassistantng.location.CarLocationTool
+import com.bydassistantng.drive.DriveReportTool
 import com.bydassistantng.quick.QuickCommands
 import com.bydassistantng.quick.SceneTool
 import com.bydassistantng.util.AppLanguage
@@ -84,6 +86,8 @@ fun assistantTools(
         add(NavigationTool.declaration)
         // Reads the maps app's own route (distance left, arrival): like navigation, it never touches the car.
         add(ReadNavigationTool.declaration)
+        // Where the car is, for the weather and "near me": never touches the car either.
+        add(CarLocationTool.declaration)
         add(AppLauncherTool.declaration)
         add(CloseAppTool.declaration)
         add(MediaControlTool.declaration)
@@ -100,6 +104,8 @@ fun assistantTools(
         addAll(VehicleCommandRegistry.functionDeclarations(carLink = vehicleControlEnabled))
         if (vehicleControlEnabled) {
             add(ReadCarTool.declaration)
+            // The drive as the car reported it while it was on: the same switch as reading the car.
+            add(DriveReportTool.declaration)
             add(SceneTool.declaration)
             add(PassengerScreenTool.declaration)
             // Needs a build that can switch the exterior speaker, and counts as controlling the car.
@@ -180,6 +186,18 @@ object VehicleFunctionDispatcher {
 
         if (functionCall.name == ReadNavigationTool.FUNCTION_NAME) {
             return ReadNavigationTool.handle(context, onDispatching)
+        }
+        if (functionCall.name == CarLocationTool.FUNCTION_NAME) {
+            return CarLocationTool.handle(context, onDispatching)
+        }
+        if (functionCall.name == DriveReportTool.FUNCTION_NAME) {
+            if (!vehicleControlEnabled) {
+                return buildJsonObject {
+                    put("status", "error")
+                    put("error", "Vehicle features are switched off in the app's settings.")
+                }
+            }
+            return DriveReportTool.handle(context, functionCall, onDispatching)
         }
 
         if (functionCall.name == ReadCarTool.FUNCTION_NAME) {
@@ -416,7 +434,9 @@ fun voiceAssistantSystemPrompt(
         "range, A/C, doors), call read_car with what=status before answering. For questions about fuel or energy " +
         "consumption or how to drive more economically, call read_car with what=status and use its trip_computer and " +
         "previous_readings. For \"how far is it\", \"when do we arrive\" or \"do I have enough battery/fuel to get there\", " +
-        "call read_navigation (and read_car for the range). A plain goodbye just ends the conversation; only when the " +
+        "call read_navigation (and read_car for the range). For \"how am I driving\" or how to save fuel or battery on this " +
+        "drive, call drive_report (15 minutes unless they say 30). For the weather or anything nearby, call car_location " +
+        "first, then look it up. A plain goodbye just ends the conversation; only when the " +
         "user says they are leaving or parking the car, or asks to close up, run the goodbye scene (it tidies the " +
         "cabin and closes the glass; it never switches the car off)."
     val searchInstruction = if (webSearch) {
