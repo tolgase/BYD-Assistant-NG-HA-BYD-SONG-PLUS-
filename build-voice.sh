@@ -37,7 +37,7 @@ if [ "${SKIP_TESTS:-0}" = "1" ]; then
   GRADLE_TASKS="assembleRelease"
   echo "Unit tests skipped (SKIP_TESTS=1)."
 else
-  GRADLE_TASKS="testReleaseUnitTest assembleRelease"
+  GRADLE_TASKS="testDebugUnitTest assembleRelease"
   echo "Running the unit tests first, then building the APK."
 fi
 
