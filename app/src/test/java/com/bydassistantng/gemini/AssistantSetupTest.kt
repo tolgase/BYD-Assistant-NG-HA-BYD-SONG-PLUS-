@@ -146,8 +146,9 @@ class AssistantSetupTest {
     @Test
     fun thePromptTellsTheModelWhatTheUserSpeaksAndAsksAbout() {
         val prompt = voiceAssistantSystemPrompt(AssistantLanguage.AUTO)
-        assertTrue(prompt.contains("in any dialect"))
-        assertTrue(prompt.contains("massage"))
+        // Song PLUS: the user speaks Tunisian Derja mixed with French; this car has no seat massage.
+        assertTrue(prompt.contains("Tunisian Arabic (Derja)"))
+        assertTrue(prompt.contains("seats (heating, ventilation)"))
         assertTrue(prompt.contains("open_app") && prompt.contains("media_control"))
     }
 
@@ -221,8 +222,7 @@ class AssistantSetupTest {
     @Test
     fun theAutomaticLanguageNamesRussianAmongTheOnesItFollows() {
         val auto = voiceAssistantSystemPrompt(AssistantLanguage.AUTO)
-        assertTrue(auto, auto.contains("English, Arabic, Russian, Polish or Indonesian"))
-        assertTrue(auto, auto.contains("speaks Arabic (in any dialect), Russian, Polish, Indonesian and English"))
+        assertTrue(auto, auto.contains("English, French, Arabic (including Tunisian Derja), Russian, Polish or Indonesian"))
     }
 
     @Test

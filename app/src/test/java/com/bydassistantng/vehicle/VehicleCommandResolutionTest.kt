@@ -280,9 +280,11 @@ class VehicleCommandResolutionTest {
         val sends = everything.known
             .filter { it.invocation == VehicleInvocation.GenericFeatureSet }
             .groupBy { Triple(it.deviceType, it.featureId, it.overrides.map { o -> o.featureId }) }
-        // Fridge cooling and heating share one temperature control by design; nothing else may.
+        // Fridge cooling and heating share one temperature control by design, and so do the sunroof's named stops
+        // (close/half/open) and its exact percent; nothing else may.
+        val allowed = setOf(setOf("fridge.cool.temperature", "fridge.heat.temperature"), setOf("sunroof", "sunroof.openPercent"))
         val shared = sends.filterValues { it.size > 1 }.values.map { group -> group.map { it.id }.toSet() }
-        assertTrue("$shared", shared.all { it == setOf("fridge.cool.temperature", "fridge.heat.temperature") })
+        assertTrue("$shared", shared.all { it in allowed })
     }
 
     @Test

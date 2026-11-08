@@ -43,8 +43,8 @@
       "nativeFeatureName": "Ac.AC_POWER_STATE_SET"
     },
     "stateFeatureId": 1077936144,
-    "featureName": "AC_POWER_STATE_SET",
-    "stateFeatureName": "AC_POWER_STATE"
+    "featureName": "Ac.AC_POWER_STATE_SET",
+    "stateFeatureName": "Ac.AC_POWER_STATE"
   },
   {
     "id": "ac.temperature",
@@ -100,8 +100,8 @@
       "nativeFeatureName": "Ac.AC_TEMP_MAIN_SET"
     },
     "stateFeatureId": 1077936168,
-    "featureName": "AC_TEMP_MAIN_SET",
-    "stateFeatureName": "AC_TEMP_MAIN"
+    "featureName": "Ac.AC_TEMP_MAIN_SET",
+    "stateFeatureName": "Ac.AC_TEMP_MAIN"
   },
   {
     "id": "ac.fan",
@@ -146,8 +146,8 @@
       "nativeFeatureName": "Ac.AC_WIND_LEVEL_SET"
     },
     "stateFeatureId": 1077936156,
-    "featureName": "AC_WIND_LEVEL_SET",
-    "stateFeatureName": "AC_WIND_LEVEL"
+    "featureName": "Ac.AC_WIND_LEVEL_SET",
+    "stateFeatureName": "Ac.AC_WIND_LEVEL"
   },
   {
     "id": "ac.windMode",
@@ -197,8 +197,8 @@
       "nativeFeatureName": "Ac.AC_WIND_MODE_SET"
     },
     "stateFeatureId": 1077936152,
-    "featureName": "AC_WIND_MODE_SET",
-    "stateFeatureName": "AC_WIND_MODE"
+    "featureName": "Ac.AC_WIND_MODE_SET",
+    "stateFeatureName": "Ac.AC_WIND_MODE"
   },
   {
     "id": "window.driver",
@@ -749,8 +749,8 @@
     "stateFeatureId": 1121976336,
     "featureId": 1069547528,
     "labelId": "Warna lampu ambient",
-    "featureName": "SET_INTERIOR_ATMOSPHERE_LAMP_COLOR_SET",
-    "stateFeatureName": "SET_IAL_FRONT_COLOR"
+    "featureName": "Setting.SET_INTERIOR_ATMOSPHERE_LAMP_COLOR_SET",
+    "stateFeatureName": "Setting.SET_IAL_FRONT_COLOR"
   },
   {
     "id": "ambient.brightness",
@@ -772,8 +772,8 @@
     "stateFeatureId": 1121976328,
     "featureId": 1069547536,
     "labelId": "Kecerahan lampu ambient",
-    "featureName": "SET_INTERIOR_ATMOSPHERE_LAMP_BRIGHTNESS_SET",
-    "stateFeatureName": "SET_IAL_FRONT_BRIGHTNESS"
+    "featureName": "Setting.SET_INTERIOR_ATMOSPHERE_LAMP_BRIGHTNESS_SET",
+    "stateFeatureName": "Setting.SET_IAL_FRONT_BRIGHTNESS"
   },
   {
     "id": "ambient.dynamic",
@@ -1601,8 +1601,8 @@
       "nativeFeatureName": "Ac.AC_CYCLE_MODE_SET"
     },
     "stateFeatureId": 1077936148,
-    "featureName": "AC_CYCLE_MODE_SET",
-    "stateFeatureName": "AC_CYCLE_MODE"
+    "featureName": "Ac.AC_CYCLE_MODE_SET",
+    "stateFeatureName": "Ac.AC_CYCLE_MODE"
   },
   {
     "id": "ac.ventilation",
@@ -1649,8 +1649,8 @@
       "nativeFeatureName": "Ac.AC_VENTILATION_STATE_SET"
     },
     "stateFeatureId": 1314914314,
-    "featureName": "AC_VENTILATION_STATE_SET",
-    "stateFeatureName": "AC_VENTILATION_STATE"
+    "featureName": "Ac.AC_VENTILATION_STATE_SET",
+    "stateFeatureName": "Ac.AC_VENTILATION_STATE"
   },
   {
     "id": "ac.compressor",
@@ -1697,8 +1697,8 @@
       "nativeFeatureName": "Ac.AC_COMPRESSOR_MODE_SET"
     },
     "stateFeatureId": 1077936137,
-    "featureName": "AC_COMPRESSOR_MODE_SET",
-    "stateFeatureName": "AC_COMPRESSOR_MODE"
+    "featureName": "Ac.AC_COMPRESSOR_MODE_SET",
+    "stateFeatureName": "Ac.AC_COMPRESSOR_MODE"
   },
   {
     "id": "ac.auto",
@@ -1744,8 +1744,8 @@
       "nativeFeatureName": "Ac.AC_CTRL_MODE_SET"
     },
     "stateFeatureId": 1077936146,
-    "featureName": "AC_CTRL_MODE_SET",
-    "stateFeatureName": "AC_CTRL_MODE"
+    "featureName": "Ac.AC_CTRL_MODE_SET",
+    "stateFeatureName": "Ac.AC_CTRL_MODE"
   },
   {
     "id": "ac.frontDefrost",
@@ -1794,8 +1794,8 @@
       "nativeFeatureName": "Ac.AC_DEFROST_FRONT_STATE_SET"
     },
     "stateFeatureId": 1077936150,
-    "featureName": "AC_DEFROST_FRONT_STATE_SET",
-    "stateFeatureName": "AC_DEFROST_FRONT_STATE"
+    "featureName": "Ac.AC_DEFROST_FRONT_STATE_SET",
+    "stateFeatureName": "Ac.AC_DEFROST_FRONT_STATE"
   },
   {
     "id": "ac.rearDefrost",
@@ -1844,7 +1844,7 @@
       "nativeFeatureName": "Ac.AC_DEFROST_REAR_STATE_SET"
     },
     "stateFeatureId": 1128267825,
-    "featureName": "AC_DEFROST_REAR_STATE_SET",
-    "stateFeatureName": "AC_DEFROST_REAR_STATE"
+    "featureName": "Ac.AC_DEFROST_REAR_STATE_SET",
+    "stateFeatureName": "Ac.AC_DEFROST_REAR_STATE"
   }
 ]

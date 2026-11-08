@@ -150,7 +150,8 @@ class VehicleCommandRegistryTest {
         val fold = command("mirrors.autoFold")
         assertEquals(1312817178, fold.featureId)
         assertEquals(1081081884, fold.stateFeatureId)
-        assertEquals(mapOf("off" to 0, "on" to 1), (fold.parameter as VehicleParameter.FixedEnum).options)
+        // Song PLUS: off is written as 2, like the tilt-in-reverse switch next to it.
+        assertEquals(mapOf("off" to 2, "on" to 1), (fold.parameter as VehicleParameter.FixedEnum).options)
 
         val tilt = command("mirrors.tiltInReverse")
         assertEquals(1312817180, tilt.featureId)
@@ -160,27 +161,23 @@ class VehicleCommandRegistryTest {
     }
 
     @Test
-    fun ambientColorAndBrightnessAreWholeCabinMethodsWithReadBack() {
+    fun ambientColorAndBrightnessAreWholeCabinControlsWithReadBack() {
+        // Song PLUS (DiLink 5.0): the colour and brightness are written straight to their Setting controls.
         val color = command("ambient.color")
-        val colorCall = color.invocation as VehicleInvocation.NamedMethod
-        assertEquals("setIALColor", colorCall.methodName)
-        // Area 3 is the whole cabin (front and back rows), source 1 is "voice".
-        assertEquals(listOf(3, null, 1), colorCall.argsTemplate)
-        assertEquals(1121976336, color.stateFeatureId)
+        assertEquals(VehicleInvocation.GenericFeatureSet, color.invocation)
         assertEquals(1023, color.deviceType)
+        assertEquals("Setting.SET_INTERIOR_ATMOSPHERE_LAMP_COLOR_SET", color.featureName)
+        assertEquals(1121976336, color.stateFeatureId)
         val colors = (color.parameter as VehicleParameter.FixedEnum).options
-        // The car's colour strip is 1..127; 0 is invalid and is refused by the car.
+        // The car's palette numbers are small positive codes; 0 is refused by the car.
         assertTrue(colors.values.all { it in 1..127 })
-        assertEquals(104, colors.getValue("red"))
-        assertEquals(16, colors.getValue("blue"))
+        assertEquals(26, colors.getValue("red"))
+        assertEquals(4, colors.getValue("blue"))
 
         val brightness = command("ambient.brightness")
-        val range = brightness.parameter as VehicleParameter.Range
-        // The method takes 0..5; the state reads 1..6, which is the level the user names.
-        assertEquals(VehicleParameter.Range(1, 6), range)
-        assertEquals(-1, brightness.valueOffset)
-        assertEquals(0, brightness.stateOffset)
-        assertEquals(listOf(3, null, 1), (brightness.invocation as VehicleInvocation.NamedMethod).argsTemplate)
+        assertEquals(VehicleInvocation.GenericFeatureSet, brightness.invocation)
+        assertEquals(VehicleParameter.Range(1, 10), brightness.parameter)
+        assertEquals("Setting.SET_IAL_FRONT_BRIGHTNESS", brightness.stateFeatureName)
     }
 
     @Test

@@ -86,8 +86,9 @@ class DiLinkPlatformTest {
     fun theSignatureIsTheNumbersThisRegistryWasVerifiedWith() {
         // The registry's numbers come from a DiLink 5 car; the signature's must agree with the ones it shares.
         val byId = VehicleCommandRegistry.commandsFor(DiLinkPlatform.DILINK_5).known.associateBy { it.id }
-        assertEquals(PlatformSignature.canaries.first { it.name == "AC_CTRL_MODE" }.dilink4And5, byId.getValue("ac.auto").featureId)
-        assertEquals(PlatformSignature.canaries.first { it.name == "AC_CYCLE_MODE" }.dilink4And5, byId.getValue("ac.airSource").featureId)
-        assertEquals(PlatformSignature.canaries.first { it.name == "AC_DEFROST_FRONT_STATE" }.dilink4And5, byId.getValue("ac.frontDefrost").featureId)
+        // The canaries are the A/C states; on the Song PLUS the commands write the _SET controls and read these states back.
+        assertEquals(PlatformSignature.canaries.first { it.name == "AC_CTRL_MODE" }.dilink4And5, byId.getValue("ac.auto").stateFeatureId)
+        assertEquals(PlatformSignature.canaries.first { it.name == "AC_CYCLE_MODE" }.dilink4And5, byId.getValue("ac.airSource").stateFeatureId)
+        assertEquals(PlatformSignature.canaries.first { it.name == "AC_DEFROST_FRONT_STATE" }.dilink4And5, byId.getValue("ac.frontDefrost").stateFeatureId)
     }
 }

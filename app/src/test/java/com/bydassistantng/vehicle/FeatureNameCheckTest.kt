@@ -62,7 +62,7 @@ class FeatureNameCheckTest {
 
     @Test
     fun theCommandsThatUseNoFeatureNumbersHaveNoReferences() {
-        for (id in listOf("ac.power", "ac.auto", "dashcam.record", "audio.volume", "screen.rotation")) {
+        for (id in listOf("dashcam.record", "audio.volume", "screen.rotation")) {
             assertEquals(id, emptyList<FeatureNameCheck.Reference>(), FeatureNameCheck.referencesOf(command(id)))
         }
     }
@@ -79,11 +79,11 @@ class FeatureNameCheckTest {
     }
 
     @Test
-    fun aTypedMethodNamesOnlyTheStateItIsConfirmedBy() {
+    fun theAmbientColourNamesItsControlAndTheStateItIsConfirmedBy() {
         val references = FeatureNameCheck.referencesOf(command("ambient.color"))
 
-        assertEquals(listOf(FeatureNameCheck.STATE), references.map { it.part })
-        assertEquals("Setting.SET_IAL_FRONT_COLOR", references.single().name)
+        assertEquals(listOf(FeatureNameCheck.CONTROL, FeatureNameCheck.STATE), references.map { it.part })
+        assertEquals(listOf("Setting.SET_INTERIOR_ATMOSPHERE_LAMP_COLOR_SET", "Setting.SET_IAL_FRONT_COLOR"), references.map { it.name })
     }
 
     // ── What is checked ────────────────────────────────────────────────────────────────────────
