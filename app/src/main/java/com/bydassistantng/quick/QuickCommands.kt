@@ -466,6 +466,13 @@ object QuickCommands {
         ledger["$commandId=$value"] = t
     }
 
+    /** Why a command did not go through, short enough for the banner. */
+    private fun reasonOf(result: VehicleDispatchResult): String? = when (result) {
+        is VehicleDispatchResult.Failure -> (result.detail ?: result.error.name).take(90)
+        is VehicleDispatchResult.Blocked -> result.reason.take(90)
+        else -> null
+    }
+
     /** What [plan] will do, in the app's language, for the banner before it is done: "Window (driver): open". */
     fun describe(context: Context, plan: QuickPlan): String {
         plan.scene?.let { return it.label }
@@ -498,7 +505,8 @@ object QuickCommands {
             val ok = result is VehicleDispatchResult.Success
             if (ok) remember(id, value) else allOk = false
             AppLogger.log(TAG, "quick $id=$word -> $result")
-            if (plan.scene == null) parts += "${if (ok) "✓" else "✗"} ${command.labelFor(lang)}: ${word.replace('_', ' ')}"
+            if (plan.scene == null) parts += "${if (ok) "✓" else "✗"} ${command.labelFor(lang)}: ${word.replace('_', ' ')}" +
+                (if (ok) "" else reasonOf(result)?.let { " — $it" } ?: "")
         }
         val summary = plan.scene?.let { "${if (allOk) "✓" else "⚠"} ${it.label}" } ?: parts.joinToString("  ")
         return QuickOutcome(allOk, summary.ifEmpty { "✓" })

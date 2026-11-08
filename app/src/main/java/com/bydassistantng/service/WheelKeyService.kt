@@ -105,7 +105,8 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
         DriveMonitor.start(
             scope = scope,
             enabled = { preferencesRepository.driveCoach.first() && preferencesRepository.vehicleControlEnabled.first() },
-            busy = { liveConversationController.inConversation },
+            // Nor during an offline command: a status read in front of it would make the car do it late.
+            busy = { liveConversationController.inConversation || offlineTurnActive },
             read = { (vehicleController.query(VehicleQuery.CAR_STATUS) as? VehicleDispatchResult.Success)?.note },
             tipsEnabled = { preferencesRepository.driveTips.first() },
             // Said like the greeting: same speaker (the driver's headrest where the car has one), same language.
@@ -299,7 +300,21 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
     }
 
     /** One offline car command: listen, recognise on the car, do it, and show what was done on the banner. */
+    @Volatile private var offlineTurnActive = false
+
     private suspend fun runOfflineTurn() {
+        offlineTurnActive = true
+        try {
+            runOfflineTurnInner()
+        } finally {
+            offlineTurnActive = false
+        }
+    }
+
+    private suspend fun runOfflineTurnInner() {
+        // Start the car link while the driver is still speaking, so the command goes out the moment it is understood
+        // instead of waiting a few seconds for the helper to start.
+        vehicleController.warmUp()
         earcons.play(Earcon.LISTENING)
         banner.show(BannerMode.LISTENING, labelOverride = text(R.string.quick_listening))
         val heard = QuickCommands.listenOnce(this, quickRecorder)
