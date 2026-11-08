@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.StatFs
 import androidx.core.content.FileProvider
 import androidx.core.content.pm.PackageInfoCompat
+import com.bydassistantng.BuildConfig
 import com.bydassistantng.ui.MainActivity
 import com.bydassistantng.util.AdbHelper
 import com.bydassistantng.util.AppLogger
@@ -93,7 +94,7 @@ class UpdateInstaller @Inject constructor(@ApplicationContext private val contex
      * published for it, or the transfer fails.
      */
     suspend fun download(release: UpdateRelease, source: UpdateSource, onProgress: (Float) -> Unit): File = withContext(Dispatchers.IO) {
-        val url = release.apkUrl.toHttpUrlOrNull()
+        val url = source.downloadUrlFor(release.apkUrl).toHttpUrlOrNull()
         if (url == null || !source.allowsDownload(url)) throw UpdateFailure(UpdateFailure.Kind.BAD_RESPONSE, "download address")
         if (release.apkSize > MAX_APK_BYTES) throw UpdateFailure(UpdateFailure.Kind.BAD_RESPONSE, "file too large")
         sweep()
@@ -102,7 +103,14 @@ class UpdateInstaller @Inject constructor(@ApplicationContext private val contex
 
         val part = File(dir, "update.apk.part")
         val target = File(dir, "update.apk")
-        val call = client.newCall(Request.Builder().url(url).header("Accept", "application/octet-stream").build())
+        // Your own server only hands its builds to an app holding the token, as for the release list. The token goes to
+        // that host alone, and redirects are not followed there, so it can never be carried anywhere else.
+        val ownServer = source.ownHost != null && url.host == source.ownHost
+        val request = Request.Builder().url(url).header("Accept", "application/octet-stream")
+            .header("User-Agent", "BYD-Assistant-NG/${BuildConfig.VERSION_NAME}")
+        if (ownServer && BuildConfig.UPDATE_TOKEN.isNotBlank()) request.header("x-app-token", BuildConfig.UPDATE_TOKEN)
+        val http = if (ownServer) client.newBuilder().followRedirects(false).followSslRedirects(false).build() else client
+        val call = http.newCall(request.build())
         val cancelOnStop = currentCoroutineContext()[Job]?.invokeOnCompletion { call.cancel() }
         try {
             val digest = MessageDigest.getInstance("SHA-256")

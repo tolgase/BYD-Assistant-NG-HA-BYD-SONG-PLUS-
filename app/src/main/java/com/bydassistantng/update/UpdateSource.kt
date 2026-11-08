@@ -16,6 +16,13 @@ class UpdateSource private constructor(
     /** Set when this source is a server of your own: downloads are held to that host instead of GitHub's. */
     internal var ownHost: String? = null
 
+    /**
+     * Where to fetch the release's APK. Your own server sits behind a path prefix (e.g. /Dlink) that it cannot see, so
+     * the address it lists may lack it; the download is taken from beside the releases address the build was given.
+     */
+    fun downloadUrlFor(listed: String): String =
+        if (ownHost != null && releasesUrl.endsWith("/releases")) releasesUrl.removeSuffix("/releases") + "/apk" else listed
+
     /** Whether [url] is one of this source's release downloads (always over https). */
     fun allowsDownload(url: HttpUrl): Boolean = when {
         anyHost -> true
