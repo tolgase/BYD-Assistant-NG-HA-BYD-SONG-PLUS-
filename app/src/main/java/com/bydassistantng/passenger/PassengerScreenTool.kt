@@ -9,6 +9,7 @@ import com.bydassistantng.apps.InstalledApp
 import com.bydassistantng.gemini.GeminiFunctionCall
 import com.bydassistantng.gemini.GeminiFunctionDeclaration
 import com.bydassistantng.gemini.GeminiSchema
+import com.bydassistantng.media.FirstResult
 import com.bydassistantng.media.YouTubeLibrary
 import com.bydassistantng.util.AppLanguage
 import com.bydassistantng.util.AppLogger
@@ -22,7 +23,6 @@ import kotlinx.serialization.json.put
 
 private const val TAG = "PassengerScreenTool"
 private const val MAX_TEXT = 100
-private const val YOUTUBE_PACKAGE = "com.google.android.youtube"
 
 /** The Android user the passenger screen runs, whose apps are launched with `open 999 <package>`. */
 private const val PASSENGER_USER = 999
@@ -224,7 +224,7 @@ object PassengerScreenTool {
             is PassengerTarget.Main -> {
                 onDispatching(AppLanguage.string(context, R.string.banner_passenger_open, target.app.label))
                 beforeLaunch(target.app.packageName)
-                val link = if (search.isNotEmpty() && target.app.packageName == YOUTUBE_PACKAGE) YouTubeLibrary.searchUrl(search) else null
+                val link = if (search.isNotEmpty() && FirstResult.isYouTube(target.app.packageName)) YouTubeLibrary.searchUrl(search) else null
                 val line = "open 0 ${target.app.packageName}" + (link?.let { " $it" } ?: "")
                 answer(send(controller, line), AnswerKind.OPEN, label = target.app.label, searched = link != null)
             }

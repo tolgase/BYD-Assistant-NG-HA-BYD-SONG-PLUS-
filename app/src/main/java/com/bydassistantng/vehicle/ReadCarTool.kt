@@ -19,6 +19,7 @@ object ReadCarTool {
         OUTSIDE_TEMPERATURE("outside_temperature", VehicleQuery.OUTSIDE_TEMPERATURE),
         INSIDE_TEMPERATURE("inside_temperature", VehicleQuery.INSIDE_TEMPERATURE),
         AIR_QUALITY("air_quality", VehicleQuery.AIR_QUALITY),
+        STATUS("status", VehicleQuery.CAR_STATUS),
         ;
 
         companion object {
@@ -34,7 +35,10 @@ object ReadCarTool {
             "what=outside_temperature: the outside air temperature in degrees Celsius; use for how hot or cold it " +
             "is outside. what=inside_temperature: the air temperature inside the cabin in degrees Celsius, from the " +
             "climate system's inside sensor; use for how hot or cold it is inside the car. what=air_quality: the PM2.5 air quality inside the cabin and outside, with the car's own " +
-            "rating; use for questions about air quality, pollution or dust. Mention any warning plainly.",
+            "rating; use for questions about air quality, pollution or dust. what=status: the car's current state — which windows, " +
+            "doors, sunroof and tailgate are open, the A/C, seat heating/ventilation, battery percent and electric and fuel " +
+            "range; use it for any question about what is open, the battery, range, or what the A/C and seats are set to. " +
+            "Mention any warning plainly.",
         parameters = GeminiSchema(
             type = "OBJECT",
             properties = mapOf(
@@ -58,6 +62,7 @@ object ReadCarTool {
             What.OUTSIDE_TEMPERATURE -> OutsideTemperatureTool.parse(note)?.let { OutsideTemperatureTool.report(it) }
             What.INSIDE_TEMPERATURE -> InsideTemperatureTool.parse(note)?.let { InsideTemperatureTool.report(it) }
             What.AIR_QUALITY -> AirQualityTool.parse(note)?.let { AirQualityTool.report(it) }
+            What.STATUS -> CarStatus.report(note)
         }
     }
 }

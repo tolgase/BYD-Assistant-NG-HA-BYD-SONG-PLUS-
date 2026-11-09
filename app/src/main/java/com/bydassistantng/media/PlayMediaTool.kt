@@ -232,13 +232,13 @@ object PlayMediaTool {
      * [PlaybackFollowUp]). Nothing is searched, so there is no phrase and no ranking to get wrong.
      */
     private fun playFromLibrary(context: Context, app: InstalledApp, request: PlayRequest): JsonObject {
-        val link = when (app.packageName) {
-            FirstResult.SPOTIFY -> SpotifyLibrary.linkFor(app.packageName, request.source)
-            FirstResult.YOUTUBE -> YouTubeLibrary.linkFor(request.source)
+        val link = when {
+            FirstResult.isSpotify(app.packageName) -> SpotifyLibrary.linkFor(app.packageName, request.source)
+            FirstResult.isYouTube(app.packageName) -> YouTubeLibrary.linkFor(request.source)
             else -> null
         } ?: return partial("${app.label} cannot play from the user's own library by voice, only Spotify and YouTube can. Offer to search for something to play instead.")
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(app.packageName)
-        if (app.packageName == FirstResult.YOUTUBE) freshTask(intent) else intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (FirstResult.isYouTube(app.packageName)) freshTask(intent) else intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         try {
             context.startActivity(intent)
         } catch (e: ActivityNotFoundException) {
@@ -251,7 +251,7 @@ object PlayMediaTool {
         AppLogger.log(TAG, "Asked ${app.label} to open ${request.source.word}${request.query.takeIf { it.isNotBlank() }?.let { " \"$it\"" }.orEmpty()}")
         PlaybackFollowUp.schedule(PendingPlayback(app.packageName, app.label, request.query, MediaKind.PLAYLIST, source = request.source))
         val what = when {
-            request.source == PlaySource.FAVORITES -> if (app.packageName == FirstResult.YOUTUBE) "the user's liked videos" else "the user's liked songs"
+            request.source == PlaySource.FAVORITES -> if (FirstResult.isYouTube(app.packageName)) "the user's liked videos" else "the user's liked songs"
             request.query.isNotBlank() -> "the user's playlist \"${request.query}\""
             else -> "the user's most recent playlist"
         }
@@ -264,7 +264,7 @@ object PlayMediaTool {
      * of that would be pressed); its own search link is answered in any state.
      */
     private fun searchIntent(app: InstalledApp, request: PlayRequest): Intent =
-        if (app.packageName == FirstResult.YOUTUBE) {
+        if (FirstResult.isYouTube(app.packageName)) {
             freshTask(Intent(Intent.ACTION_VIEW, Uri.parse(YouTubeLibrary.searchUrl(request.query))).setPackage(app.packageName))
         } else {
             Intent(MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH)

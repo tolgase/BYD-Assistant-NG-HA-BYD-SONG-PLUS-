@@ -13,10 +13,18 @@ import com.bydassistantng.memory.MemoryFacts
 import com.bydassistantng.memory.RecentExchanges
 import com.bydassistantng.memory.RememberTool
 import com.bydassistantng.data.ArabicDialect
+import com.bydassistantng.data.AssistantIdentity
 import com.bydassistantng.data.AssistantLanguage
 import com.bydassistantng.media.MediaControlTool
 import com.bydassistantng.media.PlayMediaTool
 import com.bydassistantng.navigation.NavigationTool
+import com.bydassistantng.navigation.ReadNavigationTool
+import com.bydassistantng.location.CarLocationTool
+import com.bydassistantng.drive.DriveReportTool
+import com.bydassistantng.drive.RideContext
+import com.bydassistantng.drive.RideStyle
+import com.bydassistantng.quick.QuickCommands
+import com.bydassistantng.quick.SceneTool
 import com.bydassistantng.util.AppLanguage
 import com.bydassistantng.util.AppLogger
 import com.bydassistantng.vehicle.LoggingVehicleController
@@ -24,6 +32,7 @@ import com.bydassistantng.vehicle.VolumeTool
 import com.bydassistantng.passenger.PassengerScreenTool
 import com.bydassistantng.vehicle.InAppVehicleController
 import com.bydassistantng.vehicle.ReadCarTool
+import com.bydassistantng.vehicle.ConsumptionHistory
 import com.bydassistantng.vehicle.needsCarLink
 import com.bydassistantng.vehicle.SetDriveModeTool
 import com.bydassistantng.cluster.ClusterOptions
@@ -77,6 +86,10 @@ fun assistantTools(
 ): List<GeminiTool> {
     val declarations = buildList {
         add(NavigationTool.declaration)
+        // Reads the maps app's own route (distance left, arrival): like navigation, it never touches the car.
+        add(ReadNavigationTool.declaration)
+        // Where the car is, for the weather and "near me": never touches the car either.
+        add(CarLocationTool.declaration)
         add(AppLauncherTool.declaration)
         add(CloseAppTool.declaration)
         add(MediaControlTool.declaration)
@@ -93,6 +106,9 @@ fun assistantTools(
         addAll(VehicleCommandRegistry.functionDeclarations(carLink = vehicleControlEnabled))
         if (vehicleControlEnabled) {
             add(ReadCarTool.declaration)
+            // The drive as the car reported it while it was on: the same switch as reading the car.
+            add(DriveReportTool.declaration)
+            add(SceneTool.declaration)
             add(PassengerScreenTool.declaration)
             // Needs a build that can switch the exterior speaker, and counts as controlling the car.
             if (conversation && exteriorSpeaker) {
@@ -121,7 +137,11 @@ object VehicleFunctionDispatcher {
     private val repeatGuard = VehicleRepeatGuard()
 
     /** The user asked something new: asking for the same command again is on purpose, not a repeat. */
-    fun newUserTurn() = repeatGuard.reset()
+    fun newUserTurn() {
+        repeatGuard.reset()
+        // Song PLUS edition: lets the offline layer tell this exchange's commands from the next one's.
+        QuickCommands.onUserTurnEnded()
+    }
 
     suspend fun dispatch(
         functionCall: GeminiFunctionCall,
@@ -155,6 +175,31 @@ object VehicleFunctionDispatcher {
             val action = (functionCall.args["action"] as? JsonPrimitive)?.content.orEmpty()
             onDispatching(AppLanguage.string(context, R.string.banner_media, mediaActionText(context, action)))
             return MediaControlTool.handle(context, functionCall)
+        }
+
+        if (functionCall.name == SceneTool.FUNCTION_NAME) {
+            return SceneTool.handle(context, functionCall, reflectionController, vehicleControlEnabled, onDispatching).also { answer ->
+                // Song PLUS edition: a scene Gemini ran for words the car did not understand is learned for offline use.
+                if ((answer["status"] as? JsonPrimitive)?.content == "ok") {
+                    (functionCall.args["scene"] as? JsonPrimitive)?.content?.let { QuickCommands.learnFromGemini(context, null, null, it) }
+                }
+            }
+        }
+
+        if (functionCall.name == ReadNavigationTool.FUNCTION_NAME) {
+            return ReadNavigationTool.handle(context, onDispatching)
+        }
+        if (functionCall.name == CarLocationTool.FUNCTION_NAME) {
+            return CarLocationTool.handle(context, onDispatching)
+        }
+        if (functionCall.name == DriveReportTool.FUNCTION_NAME) {
+            if (!vehicleControlEnabled) {
+                return buildJsonObject {
+                    put("status", "error")
+                    put("error", "Vehicle features are switched off in the app's settings.")
+                }
+            }
+            return DriveReportTool.handle(context, functionCall, onDispatching)
         }
 
         if (functionCall.name == ReadCarTool.FUNCTION_NAME) {
@@ -214,7 +259,10 @@ object VehicleFunctionDispatcher {
                 vehicleControlEnabled -> reflectionController
                 else -> LoggingVehicleController
             }
-            repeatGuard.dispatch(command.id, resolvedValue) {
+            // Song PLUS edition: the offline layer may already have done this, from the same words, a moment ago.
+            if (QuickCommands.wasJustDone(command.id, resolvedValue)) {
+                VehicleDispatchResult.Success("Already done instantly from the driver's words. Do not send it again; tell the user it is done in two or three words.")
+            } else repeatGuard.dispatch(command.id, resolvedValue) {
                 try {
                     controller.dispatch(command, resolvedValue)
                 } catch (e: IllegalStateException) {
@@ -226,6 +274,10 @@ object VehicleFunctionDispatcher {
             }
         }
         AppLogger.log(TAG, "dispatch ${command.id}(value=$rawValue -> $resolvedValue) -> $result")
+        // Song PLUS edition: a command the car itself accepted, for words it did not understand offline, is learned.
+        if (result is VehicleDispatchResult.Success && resolvedValue != null && rawValue != null) {
+            QuickCommands.learnFromGemini(context, command.id, rawValue, null)
+        }
         return result.toResponseJson()
     }
 
@@ -247,6 +299,7 @@ object VehicleFunctionDispatcher {
             ReadCarTool.What.OUTSIDE_TEMPERATURE -> R.string.banner_outside_temperature
             ReadCarTool.What.INSIDE_TEMPERATURE -> R.string.banner_inside_temperature
             ReadCarTool.What.AIR_QUALITY -> R.string.banner_air_quality
+            ReadCarTool.What.STATUS -> R.string.banner_car_status
         }
         onDispatching(AppLanguage.string(context, banner))
         if (!vehicleControlEnabled) {
@@ -258,7 +311,9 @@ object VehicleFunctionDispatcher {
         return when (val result = controller.query(what.query)) {
             is VehicleDispatchResult.Success -> {
                 AppLogger.log(TAG, "read_car ${what.word} -> ${result.note}")
-                ReadCarTool.report(what, result.note) ?: buildJsonObject {
+                // Song PLUS edition: the status carries the earlier energy readings too, for consumption questions.
+                val note = if (what == ReadCarTool.What.STATUS) ConsumptionHistory.attach(context, result.note) else result.note
+                ReadCarTool.report(what, note) ?: buildJsonObject {
                     put("status", "error")
                     put("error", "The car's answer could not be read.")
                 }
@@ -295,7 +350,7 @@ const val END_CONVERSATION_FUNCTION = "end_conversation"
 private val endConversationDeclaration = GeminiFunctionDeclaration(
     name = END_CONVERSATION_FUNCTION,
     description = "End the voice conversation: stop listening. Call this when the user says they are finished — " +
-        "e.g. stop, that's all, thanks, goodbye, cancel — in English, Arabic, Russian or Polish.",
+        "e.g. stop, that's all, thanks, goodbye, cancel — in English, Arabic, Russian, Polish or Indonesian (e.g. sudah, cukup, itu saja, terima kasih, selesai, batal).",
 )
 
 /** Shared system prompt for both the classic and Live conversation paths. [conversation] is the Live
@@ -308,23 +363,32 @@ fun voiceAssistantSystemPrompt(
     webSearch: Boolean = false,
     memory: MemoryContext = MemoryContext(),
     musicHint: Boolean = false,
+    identity: AssistantIdentity = AssistantIdentity(),
+    // Song PLUS edition: the ride when the conversation starts, for the assistant's hidden manners (see [RideStyle]).
+    ride: RideContext? = null,
 ): String {
     // A fixed language is a firm rule and is said twice (here and again at the very end): a model that listens in many
     // languages, and was told only once, tends to answer in whichever it heard, which an unclear word can make the wrong one.
     val languageInstruction = when (language) {
-        AssistantLanguage.AUTO -> "Reply in whichever language the user spoke — English, Arabic, Russian or Polish."
+        AssistantLanguage.AUTO -> "Reply in whichever language the user spoke — English, French, Arabic (including Tunisian Derja), Russian, Polish or Indonesian."
         AssistantLanguage.ENGLISH ->
             "Always reply in English. This is a firm rule: whatever language the user speaks, or seems to speak " +
-                "(Arabic, Russian, Polish, Spanish, anything else), your reply is in English."
+                "(Arabic, Russian, Polish, Indonesian, Spanish, anything else), your reply is in English."
         AssistantLanguage.ARABIC ->
             "Always reply in Arabic. This is a firm rule: whatever language the user speaks, or seems to speak " +
-                "(English, Russian, Polish, Spanish, anything else), your reply is in Arabic."
+                "(English, Russian, Polish, Indonesian, Spanish, anything else), your reply is in Arabic."
         AssistantLanguage.RUSSIAN ->
             "Always reply in Russian. This is a firm rule: whatever language the user speaks, or seems to speak " +
-                "(English, Arabic, Polish, Spanish, anything else), your reply is in Russian."
+                "(English, Arabic, Polish, Indonesian, Spanish, anything else), your reply is in Russian."
         AssistantLanguage.POLISH ->
             "Always reply in Polish. This is a firm rule: whatever language the user speaks, or seems to speak " +
-                "(English, Arabic, Russian, Spanish, anything else), your reply is in Polish."
+                "(English, Arabic, Russian, French, Indonesian, Spanish, anything else), your reply is in Polish."
+        AssistantLanguage.INDONESIAN ->
+            "Always reply in Indonesian. This is a firm rule: whatever language the user speaks, or seems to speak " +
+                "(English, Arabic, Russian, Polish, Malay, anything else), your reply is in Indonesian."
+        AssistantLanguage.FRENCH ->
+            "Always reply in French. This is a firm rule: whatever language the user speaks, or seems to speak " +
+                "(English, Arabic, Tunisian Derja, Russian, anything else), your reply is in French."
     }
     val languageReminder = when (language) {
         AssistantLanguage.AUTO -> ""
@@ -340,19 +404,45 @@ fun voiceAssistantSystemPrompt(
         AssistantLanguage.POLISH ->
             " Remember: every reply is in Polish, whatever language you think you heard. If you could not make out " +
                 "what was said, ask the user in Polish to say it again."
+        AssistantLanguage.INDONESIAN ->
+            " Remember: every reply is in Indonesian, whatever language you think you heard. If you could not make out " +
+                "what was said, ask the user in Indonesian to say it again."
+        AssistantLanguage.FRENCH ->
+            " Remember: every reply is in French, whatever language you think you heard. If you could not make out " +
+                "what was said, ask the user in French to say it again."
     }
     // Only said when it can matter: an assistant fixed to English or Russian never speaks Arabic.
     val dialectInstruction = dialect.promptName
         ?.takeIf { language == AssistantLanguage.AUTO || language == AssistantLanguage.ARABIC }
         ?.let { " When you reply in Arabic, speak $it — not another dialect." }
         .orEmpty()
+    // Indonesian read word for word from English sounds stiff in a car; say how it should sound. Only said when the
+    // assistant may answer in it.
+    val indonesianInstruction = if (language == AssistantLanguage.AUTO || language == AssistantLanguage.INDONESIAN) {
+        " When you reply in Indonesian, speak natural, everyday Bahasa Indonesia, polite but not stiff: address the " +
+            "user as \"Anda\", use the words Indonesian drivers use (AC, jok, jendela, kaca, setir, ban, lampu, " +
+            "bagasi) and do not translate word for word from English. Understand informal Indonesian and Jakarta slang " +
+            "too (e.g. \"nyalain\", \"matiin\", \"gedein\", \"kecilin\", \"dong\", \"ya\"), and regional accents."
+    } else ""
     // The speech recognizer behind the Live API can't be told which language to expect (the native-audio
     // models choose it themselves), so say it here: what this user speaks, and what they mostly ask about,
     // so an unclear word is heard as the car command it most likely was.
-    val listeningHint = " The user speaks Arabic (in any dialect), Russian, Polish and English, and sometimes mixes " +
-        "them in one sentence. Most requests are about the car — windows, seats (heating, ventilation, massage), " +
-        "the fridge, the A/C, lights, tyre pressure, navigation, music — so when a word is unclear, prefer the reading that is a " +
-        "car or assistant request over an unrelated phrase."
+    val listeningHint = " The user speaks Tunisian Arabic (Derja), French, standard Arabic and English, and often mixes " +
+        "them in one sentence the Tunisian way (e.g. \"sakker el fenêtre\", \"cha3el el clim\", \"7ell el coffre\"): " +
+        "sakker/سكّر = close, 7ell/حلّ = open, cha3el/شعّل = switch on, tafi/طفّي = switch off, clim/climatiseur = A/C, " +
+        "bellar/blar/بلّار = window glass, coffre/كوفر = trunk, karhba/كرهبة = car, kursi/كرسي = seat. " +
+        "Most requests are about the car — windows, seats (heating, ventilation), the A/C, ambient light, tyre pressure, " +
+        "range and battery, navigation, music — so when a word is unclear, prefer the reading that is a car or assistant " +
+        "request over an unrelated phrase. For several car settings at once (\"I'm hot\", \"close everything\"), " +
+        "use run_scene when a scene fits. For any question about the car's current state (what is open, battery, " +
+        "range, A/C, doors), call read_car with what=status before answering. For questions about fuel or energy " +
+        "consumption or how to drive more economically, call read_car with what=status and use its trip_computer and " +
+        "previous_readings. For \"how far is it\", \"when do we arrive\" or \"do I have enough battery/fuel to get there\", " +
+        "call read_navigation (and read_car for the range). For \"how am I driving\" or how to save fuel or battery on this " +
+        "drive, call drive_report (15 minutes unless they say 30). For the weather or anything nearby, call car_location " +
+        "first, then look it up. A plain goodbye just ends the conversation; only when the " +
+        "user says they are leaving or parking the car, or asks to close up, run the goodbye scene (it tidies the " +
+        "cabin and closes the glass; it never switches the car off)."
     val searchInstruction = if (webSearch) {
         " For questions about current information — news, weather, sports results, prices, opening hours — " +
             "use Google Search, then answer in one or two spoken sentences without reading out links or sources."
@@ -375,7 +465,7 @@ fun voiceAssistantSystemPrompt(
         " Music may be playing in the car. Sung words and other music are not the driver speaking to you: ignore them, and " +
             "answer only when a person speaks to you."
     } else ""
-    return "You are a concise voice assistant built into a car's head unit. $languageInstruction$dialectInstruction " +
+    return "${identity.promptOpening()} $languageInstruction$dialectInstruction$indonesianInstruction " +
         "Keep replies short — they will be read aloud.$listeningHint When the user asks to be taken somewhere, call " +
         "navigate_to with the place name instead of describing the route. When the user asks to open an app, call " +
         "open_app, and to close or quit an app, call close_app; for play, pause, next or previous on the music, " +
@@ -391,6 +481,7 @@ fun voiceAssistantSystemPrompt(
                 ""
             }
             ) +
+        ride?.let { RideStyle.instruction(it) }.orEmpty() +
         languageReminder
 }
 
@@ -415,6 +506,10 @@ object ReplyLanguage {
             // Polish is written in the Latin script, like English and Spanish, so its letters cannot prove it (a short
             // reply may have no accented letter at all): only a reply in another script is certainly not Polish.
             AssistantLanguage.POLISH -> arabic == 0 && cyrillic == 0
+            // Indonesian is written in plain Latin letters, so, as with Polish, only another script rules it out.
+            AssistantLanguage.INDONESIAN -> arabic == 0 && cyrillic == 0
+            // French is Latin script too: only a reply in another script is certainly not French.
+            AssistantLanguage.FRENCH -> arabic == 0 && cyrillic == 0
         }
     }
 }

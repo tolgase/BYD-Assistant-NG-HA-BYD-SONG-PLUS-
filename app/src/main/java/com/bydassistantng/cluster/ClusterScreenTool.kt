@@ -9,6 +9,7 @@ import com.bydassistantng.apps.InstalledApp
 import com.bydassistantng.gemini.GeminiFunctionCall
 import com.bydassistantng.gemini.GeminiFunctionDeclaration
 import com.bydassistantng.gemini.GeminiSchema
+import com.bydassistantng.media.FirstResult
 import com.bydassistantng.media.YouTubeLibrary
 import com.bydassistantng.media.YouTubeVideoFinder
 import com.bydassistantng.util.AppLanguage
@@ -23,7 +24,6 @@ import kotlinx.serialization.json.put
 
 private const val TAG = "ClusterScreenTool"
 private const val MAX_TEXT = 100
-private const val YOUTUBE_PACKAGE = "com.google.android.youtube"
 
 /** What the assistant can do with the instrument cluster; the words are what the model sends. */
 enum class ClusterAction(val word: String) {
@@ -176,7 +176,7 @@ object ClusterScreenTool {
      * (a pasted link is used as it is) and the app is opened on that video's own link.
      */
     private suspend fun openVideo(controller: VehicleController, app: InstalledApp, video: String, policy: String): JsonObject {
-        if (app.packageName != YOUTUBE_PACKAGE) return error("A video can only be chosen for YouTube; ${app.label} was opened without one.")
+        if (!FirstResult.isYouTube(app.packageName)) return error("A video can only be chosen for YouTube; ${app.label} was opened without one.")
         val linked = YouTubeLibrary.videoIdOf(video)
         val hit = if (linked != null) {
             YouTubeLibrary.VideoHit(linked, "")

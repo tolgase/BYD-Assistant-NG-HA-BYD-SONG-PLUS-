@@ -75,6 +75,12 @@ class SettingsViewModel @Inject constructor(
 
     private fun text(id: Int, vararg args: Any): String = AppLanguage.string(context, id, *args)
 
+    val identity: StateFlow<com.bydassistantng.data.AssistantIdentity> = preferencesRepository.identity
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.bydassistantng.data.AssistantIdentity())
+    fun setIdentity(identity: com.bydassistantng.data.AssistantIdentity) {
+        viewModelScope.launch { preferencesRepository.setIdentity(identity) }
+    }
+
     val language: StateFlow<AssistantLanguage> = preferencesRepository.assistantLanguage
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AssistantLanguage.AUTO)
     val vehicleControlEnabled: StateFlow<Boolean> = preferencesRepository.vehicleControlEnabled
@@ -111,10 +117,31 @@ class SettingsViewModel @Inject constructor(
     }
 
     val greetingEnabled: StateFlow<Boolean> = preferencesRepository.greetingEnabled
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
 
     fun setGreetingEnabled(enabled: Boolean) {
         viewModelScope.launch { preferencesRepository.setGreetingEnabled(enabled) }
+    }
+
+    val welcomeSummary: StateFlow<Boolean> = preferencesRepository.welcomeSummary
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
+    fun setWelcomeSummary(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setWelcomeSummary(enabled) }
+    }
+
+    val driveCoach: StateFlow<Boolean> = preferencesRepository.driveCoach
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
+    fun setDriveCoach(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setDriveCoach(enabled) }
+    }
+
+    val driveTips: StateFlow<Boolean> = preferencesRepository.driveTipsSetting
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
+    fun setDriveTips(enabled: Boolean) {
+        viewModelScope.launch { preferencesRepository.setDriveTips(enabled) }
     }
 
     val greetingSpeaker: StateFlow<VoiceSpeaker> = preferencesRepository.greetingSpeaker
@@ -282,6 +309,20 @@ class SettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
     val webSearchEnabled: StateFlow<Boolean> = preferencesRepository.webSearchEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    // Appearance (1.7.0)
+    val uiStyle: StateFlow<com.bydassistantng.data.UiStyle> = preferencesRepository.uiStyle
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.bydassistantng.data.UiStyle.NEON)
+    val uiAccent: StateFlow<com.bydassistantng.data.UiAccent> = preferencesRepository.uiAccent
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.bydassistantng.data.UiAccent.CYAN)
+    val uiMotion: StateFlow<Boolean> = preferencesRepository.uiMotion
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+    val uiLargeText: StateFlow<Boolean> = preferencesRepository.uiLargeText
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+    fun setUiStyle(style: com.bydassistantng.data.UiStyle) { viewModelScope.launch { preferencesRepository.setUiStyle(style) } }
+    fun setUiAccent(accent: com.bydassistantng.data.UiAccent) { viewModelScope.launch { preferencesRepository.setUiAccent(accent) } }
+    fun setUiMotion(enabled: Boolean) { viewModelScope.launch { preferencesRepository.setUiMotion(enabled) } }
+    fun setUiLargeText(enabled: Boolean) { viewModelScope.launch { preferencesRepository.setUiLargeText(enabled) } }
 
     fun setArabicDialect(dialect: ArabicDialect) {
         viewModelScope.launch { preferencesRepository.setArabicDialect(dialect) }

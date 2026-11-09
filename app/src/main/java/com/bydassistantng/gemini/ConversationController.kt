@@ -104,7 +104,7 @@ class ConversationController @Inject constructor(
             }
             AppLogger.log(TAG, "[turn $turnId] encoded audio in ${SystemClock.elapsedRealtime() - encodeStartMs}ms (${audioBase64.length} base64 chars, vehicleControl=$vehicleControlEnabled)")
 
-            val systemInstruction = GeminiContent(parts = listOf(GeminiPart(text = voiceAssistantSystemPrompt(language))))
+            val systemInstruction = GeminiContent(parts = listOf(GeminiPart(text = voiceAssistantSystemPrompt(language, identity = preferencesRepository.identity.first()))))
             val history = mutableListOf(
                 GeminiContent(role = "user", parts = listOf(GeminiPart(inlineData = GeminiInlineData(mimeType, audioBase64)))),
             )

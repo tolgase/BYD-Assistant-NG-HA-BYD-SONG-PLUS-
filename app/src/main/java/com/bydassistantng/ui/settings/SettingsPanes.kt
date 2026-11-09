@@ -1,6 +1,9 @@
 package com.bydassistantng.ui.settings
 
+import android.Manifest
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +40,7 @@ import com.bydassistantng.data.ArabicDialect
 import com.bydassistantng.data.AssistantLanguage
 import com.bydassistantng.data.AssistantVoices
 import com.bydassistantng.greeting.GreetingCoordinator
+import com.bydassistantng.location.CarLocation
 import com.bydassistantng.memory.AddOutcome
 import com.bydassistantng.memory.MemoryFact
 import com.bydassistantng.memory.MemoryLimits
@@ -58,6 +62,9 @@ internal fun AssistantPane(viewModel: SettingsViewModel) {
     val assistantVoice by viewModel.assistantVoice.collectAsState()
     val webSearchEnabled by viewModel.webSearchEnabled.collectAsState()
     val greetingEnabled by viewModel.greetingEnabled.collectAsState()
+    val welcomeSummary by viewModel.welcomeSummary.collectAsState()
+    val driveCoach by viewModel.driveCoach.collectAsState()
+    val driveTips by viewModel.driveTips.collectAsState()
     val autoStartConfirmed = autoStartConfirmed(viewModel)
     val greetingSpeaker by viewModel.greetingSpeaker.collectAsState()
     val hasHeadrest by viewModel.headrestSpeakerPresent.collectAsState()
@@ -69,6 +76,17 @@ internal fun AssistantPane(viewModel: SettingsViewModel) {
     var showDialectChoice by remember { mutableStateOf(false) }
     var showVoiceChoice by remember { mutableStateOf(false) }
     var showApiKey by remember { mutableStateOf(false) }
+    val identity by viewModel.identity.collectAsState()
+    var showNames by remember { mutableStateOf(false) }
+    if (showNames) {
+        com.bydassistantng.ui.NamesDialog(
+            initial = identity,
+            title = stringResource(R.string.names_title),
+            dismissLabel = stringResource(R.string.action_close),
+            onSave = { viewModel.setIdentity(it); showNames = false },
+            onDismiss = { showNames = false },
+        )
+    }
 
     if (showLanguageChoice) {
         ChoiceDialog(
@@ -144,6 +162,17 @@ internal fun AssistantPane(viewModel: SettingsViewModel) {
                 )
             }
         }
+        SettingsSection(stringResource(R.string.names_title)) {
+            row {
+                val unset = stringResource(R.string.names_unset)
+                ChoiceSetting(
+                    title = stringResource(R.string.names_row_title),
+                    subtitle = stringResource(R.string.names_row_hint),
+                    value = listOf(identity.assistant, identity.car).map { it.ifBlank { unset } }.joinToString(" · "),
+                    onClick = { showNames = true },
+                )
+            }
+        }
         SettingsSection(stringResource(R.string.group_language_voice)) {
             row {
                 ChoiceSetting(
@@ -180,6 +209,25 @@ internal fun AssistantPane(viewModel: SettingsViewModel) {
                     onCheckedChange = { viewModel.setWebSearchEnabled(it) },
                 )
             }
+            // Song PLUS edition: where the car is, for the weather (asked for, and in the welcome summary).
+            row {
+                var locationAllowed by remember { mutableStateOf(CarLocation.permitted(context)) }
+                val askLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+                    locationAllowed = granted || CarLocation.permitted(context)
+                }
+                SettingRow(
+                    title = stringResource(R.string.location_title),
+                    subtitle = stringResource(R.string.location_desc),
+                    trailing = {
+                        SettingButton(
+                            label = stringResource(if (locationAllowed) R.string.location_allowed else R.string.location_allow),
+                            primary = !locationAllowed,
+                            enabled = !locationAllowed,
+                            onClick = { askLocation.launch(Manifest.permission.ACCESS_COARSE_LOCATION) },
+                        )
+                    },
+                )
+            }
         }
         SettingsSection(stringResource(R.string.group_greeting)) {
             row {
@@ -193,6 +241,15 @@ internal fun AssistantPane(viewModel: SettingsViewModel) {
             }
             // Everything but the toggle is only shown while the feature is on.
             if (greetingEnabled) {
+                // Song PLUS edition: the greeting as a welcome summary of the car.
+                row {
+                    SwitchSetting(
+                        title = stringResource(R.string.welcome_summary_title),
+                        subtitle = stringResource(R.string.welcome_summary_desc),
+                        checked = welcomeSummary,
+                        onCheckedChange = { viewModel.setWelcomeSummary(it) },
+                    )
+                }
                 // Without it the head unit does not start the app after the car wakes, and nothing can greet: said in a banner,
                 // with the way to the screen beside it. Amber until the screen has been opened, and again after an update or
                 // a reinstall (which reset what the head unit remembered about the app).
@@ -251,6 +308,27 @@ internal fun AssistantPane(viewModel: SettingsViewModel) {
                         subtitle = stringResource(R.string.greeting_test_desc),
                         onClick = play,
                         trailing = { SettingButton(label = stringResource(R.string.greeting_test_button), onClick = play) },
+                    )
+                }
+            }
+        }
+        // Song PLUS edition: the drive coach ("how did I drive the last 15 minutes?").
+        SettingsSection(stringResource(R.string.group_driving)) {
+            row {
+                SwitchSetting(
+                    title = stringResource(R.string.drive_coach_title),
+                    subtitle = stringResource(R.string.drive_coach_desc),
+                    checked = driveCoach,
+                    onCheckedChange = { viewModel.setDriveCoach(it) },
+                )
+            }
+            if (driveCoach) {
+                row {
+                    SwitchSetting(
+                        title = stringResource(R.string.drive_tips_title),
+                        subtitle = stringResource(R.string.drive_tips_desc),
+                        checked = driveTips,
+                        onCheckedChange = { viewModel.setDriveTips(it) },
                     )
                 }
             }

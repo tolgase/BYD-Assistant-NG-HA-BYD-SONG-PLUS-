@@ -9,8 +9,10 @@ import com.bydassistantng.service.WheelKeyService
 import com.bydassistantng.util.AppLanguage
 import com.bydassistantng.util.AppLogger
 import com.bydassistantng.vehicle.DriverPresence
+import com.bydassistantng.location.CarLocation
 import com.bydassistantng.vehicle.OutsideTemperatureTool
 import com.bydassistantng.vehicle.ShellHelperVehicleController
+import com.bydassistantng.vehicle.StatusFacts
 import com.bydassistantng.vehicle.VehicleController
 import com.bydassistantng.vehicle.VehicleDispatchResult
 import com.bydassistantng.vehicle.VehicleQuery
@@ -28,6 +30,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 private const val TAG = "Greeting"
 
@@ -84,6 +87,9 @@ class GreetingCoordinator internal constructor(
     private val timeOfDay: () -> GreetingPrompt.TimeOfDay,
     private val sleep: suspend (Long) -> Unit,
     private val log: (String) -> Unit,
+    // Song PLUS edition: whether to welcome with a summary of the car, and where the car is (for the weather).
+    private val summaryWanted: suspend () -> Boolean = { false },
+    private val place: suspend () -> String? = { null },
 ) {
     @Inject
     constructor(
@@ -115,6 +121,8 @@ class GreetingCoordinator internal constructor(
         timeOfDay = { Calendar.getInstance().let { GreetingPrompt.TimeOfDay(it.get(Calendar.HOUR_OF_DAY), it.get(Calendar.MINUTE)) } },
         sleep = { delay(it) },
         log = { AppLogger.log(TAG, it) },
+        summaryWanted = { preferences.welcomeSummary.first() },
+        place = { CarLocation.placeName(context) },
     )
 
     private val lock = Any()
@@ -279,7 +287,33 @@ class GreetingCoordinator internal constructor(
 
     private suspend fun opening(): String {
         val time = timeOfDay()
-        return GreetingPrompt.build(GreetingPrompt.partOfDay(time.hour), time, readOutsideTemperature(), languageToGreetIn(), notesInUse())
+        val outside = readOutsideTemperature()
+        val summary = if (summaryWanted()) readSummary(outside) else null
+        return GreetingPrompt.build(GreetingPrompt.partOfDay(time.hour), time, outside, languageToGreetIn(), notesInUse(), summary)
+    }
+
+    /** Song PLUS edition: the car's energy and temperatures and where it is, for the welcome summary. Never throws. */
+    private suspend fun readSummary(outside: Int?): GreetingPrompt.Summary {
+        val facts = StatusFacts.parse(ask(VehicleQuery.CAR_STATUS))
+        // The weather is a nicety: the welcome is not held up for long by a slow lookup of where the car is.
+        val where = try {
+            withTimeoutOrNull(PLACE_WAIT_MS) { place() }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log("Could not tell where the car is: $e")
+            null
+        }
+        log("Welcome summary: $facts, place ${if (where == null) "unknown" else "known"}")
+        return GreetingPrompt.Summary(
+            batteryPercent = facts.batteryPercent?.let { Math.round(it).toInt() },
+            electricRangeKm = facts.electricRangeKm?.let { Math.round(it).toInt() },
+            fuelRangeKm = facts.fuelRangeKm?.let { Math.round(it).toInt() },
+            insideCelsius = facts.insideCelsius?.let { Math.round(it).toInt() },
+            outsideCelsius = outside ?: facts.outsideCelsius?.let { Math.round(it).toInt() },
+            place = where,
+            passengers = facts.passengers,
+        )
     }
 
     /**
@@ -369,5 +403,8 @@ class GreetingCoordinator internal constructor(
         const val RETRY_MS = 4_000L
         const val SAME_WAKE_MS = 20_000L
         private const val CELSIUS_UNIT_CODE = 1
+
+        /** How long the welcome waits to know where the car is (for the weather) before going on without it. */
+        const val PLACE_WAIT_MS = 4_000L
     }
 }

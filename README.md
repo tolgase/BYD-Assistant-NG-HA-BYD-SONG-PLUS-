@@ -117,8 +117,16 @@ a car whose framework names the feature the way it was confirmed on the developm
 
 ## Requirements
 
-- A BYD DiLink head unit running an Android-13-based system (arm64). Vehicle control was developed and tested
-  on a single vehicle and firmware; other models may behave differently.
+- A BYD DiLink head unit (arm64) running Android 10 or newer. Vehicle control was developed and tested on a single
+  vehicle and firmware (DiLink 5.1); other models may behave differently. On any car the app looks each control
+  up by name in the car's own table of features, uses that car's number for it and offers only what the car has
+  ([platforms](docs/byd-internals/platforms.md)). Where each generation stands: **DiLink 5.1** (Android 13) has
+  been checked on a car. **DiLink 5.0** (Android 12) is known from one owner's log, from a BYD Song Plus: the assistant,
+  apps, navigation, media and tyre pressure work there, but the car's controls (windows, seats, A/C, drive mode) did not
+  in its first logs, because that car's software refuses the vehicle helper (it asks for a runtime permission that the ADB
+  shell cannot hold). A way round it, calling the car's own service directly, is built and being checked; it is not
+  confirmed on a car yet ([details](docs/byd-internals/platforms.md#status)). **DiLink 3 and 4** (Android 10) have not been tried
+  on a car yet.
 - A **Gemini API key** from [Google AI Studio](https://aistudio.google.com/).
 - An internet connection for the head unit (for example a phone hotspot).
 - **ADB debugging** switched on in the head unit. It is used locally, over the loopback interface, to switch the
@@ -159,8 +167,9 @@ channel (tested releases) and the **Beta** channel (newest builds first), and tu
 - With the voice channel's **cabin-noise volume** on, a second microphone listens to the cabin for as long as a
   conversation lasts. The app keeps only the sound level of the last few seconds, in memory: no audio from it is
   recorded, stored or sent.
-- The API key is stored encrypted on the device. Logs stay on the device until you choose to share them — and
-  can contain what you said, so read one before you send it.
+- The API key is stored encrypted on the device. Logs stay on the device until you choose to share or save one.
+  Then what you said and asked for, places, keys, e-mail addresses, phone numbers and network addresses are hidden
+  by default (a switch shows the whole log), so you can read exactly what leaves before it does.
 - **Memory** is kept on the device (not in a cloud backup). What it holds — the remembered facts and, for ten
   minutes, the last few exchanges — is sent to Gemini as part of the instructions of the next conversation, so
   the assistant can use it. Switch either memory off, or clear it, in Settings.
@@ -213,8 +222,8 @@ Optional build settings:
 
 ## Branches
 
-`main` is development; a commit starting with `beta:` (or a manual run) publishes a pre-release from it, and pushing to
-`stable` publishes a release. See [CONTRIBUTING.md](CONTRIBUTING.md).
+`main` is development; adding the release notes of the next beta to it (a file in `release-notes/`) publishes a pre-release,
+and pushing to `stable` prepares a release, which is published after a last look. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Project layout
 

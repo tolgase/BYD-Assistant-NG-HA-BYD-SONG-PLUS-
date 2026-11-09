@@ -59,6 +59,15 @@ a non-blocked domain are in the registry at all, so the model has no function it
 affects driving. The helper process re-checks every command, value and domain, and a dispatch refuses a
 blocked domain again. Every command that has a state id is confirmed by reading it back.
 
+The numbers in the registry are those of a DiLink 5 car, and each carries the name the car's own table of features gives it.
+When the vehicle helper starts it reads that table (`CarFeatureTable`) and the registry follows it (`NameResolution`): every
+command takes the car's number for each of its names, and a command whose control the car does not name is not offered and
+never sent. The helper tells the app which commands the car cannot do in its ready line, and the app keeps that for the next
+run (`PlatformState`). The platform the car runs (DiLink 3, 4 or 5, read from the car's own numbers and the Android level by
+`DiLinkPlatform`) only decides how careful to be: a window's percent control, for one, is not sent on a car that is not a
+recognised DiLink 5 unless the car reports the window's position. `FeatureNameCheck` writes what it found to the log, and
+`LogReport` copies that line into the header of every exported log. See [platforms.md](byd-internals/platforms.md).
+
 The registry is not offered as one function per command (that was about 3,400 tokens of declarations on every
 request). Commands are folded by **family**, the part of the id before the first dot, into one function each
 (`seat`, `window`, `dashcam`, … fourteen of them); a call carries a `setting` (the rest of the id) and a `value`.
@@ -142,8 +151,8 @@ started, so the activity and the banner also set their direction explicitly; wit
 in place changes the text but leaves the layout mirrored. The back button stays on the left in right-to-left
 languages on purpose (the driver's side).
 
-Strings live in `res/values`, `res/values-ar`, `res/values-ru` and `res/values-pl`; a unit test fails if they drift apart.
-Vehicle command names shown on the banner are in the registry (`label`, `labelAr`, `labelRu`, `labelPl`). Arabic is the
+Strings live in `res/values`, `res/values-ar`, `res/values-ru`, `res/values-pl` and `res/values-in` (Indonesian, under the legacy code Android still uses); a unit test fails if they drift apart.
+Vehicle command names shown on the banner are in the registry (`label`, `labelAr`, `labelRu`, `labelPl`, `labelId`). Arabic is the
 only right-to-left language; Russian and Polish need nothing beyond their strings, their labels and the assistant's
 instruction to answer in them. Polish is written in the Latin script like English, so a reply in it cannot be told from
 English or Spanish by its letters (the reply-language check in the log can only rule out other scripts), and the app-name

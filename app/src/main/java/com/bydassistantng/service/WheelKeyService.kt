@@ -11,6 +11,15 @@ import android.view.accessibility.AccessibilityEvent
 import com.bydassistantng.audio.AudioRecorder
 import com.bydassistantng.audio.Earcon
 import com.bydassistantng.audio.Earcons
+import com.bydassistantng.audio.LivePcmRecorder
+import com.bydassistantng.quick.QuickCommands
+import com.bydassistantng.quick.QuickParser
+import com.bydassistantng.drive.DriveMonitor
+import com.bydassistantng.drive.DriveTipPrompt
+import com.bydassistantng.data.AssistantLanguage
+import com.bydassistantng.vehicle.VehicleDispatchResult
+import com.bydassistantng.vehicle.VehicleQuery
+import com.bydassistantng.vehicle.ShellHelperVehicleController
 import com.bydassistantng.audio.VoiceSpeaker
 import com.bydassistantng.audio.TextToSpeechEngine
 import com.bydassistantng.data.PreferencesRepository
@@ -67,6 +76,9 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
     @Inject lateinit var liveConversationController: LiveConversationController
     @Inject lateinit var ttsEngine: TextToSpeechEngine
     @Inject lateinit var earcons: Earcons
+    // Song PLUS edition: offline instant commands.
+    @Inject lateinit var quickRecorder: LivePcmRecorder
+    @Inject lateinit var vehicleController: ShellHelperVehicleController
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val handler = Handler(Looper.getMainLooper())
@@ -87,6 +99,28 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
         super.onServiceConnected()
         instance = this
         scope.launch { preferencesRepository.triggerKeyCode.collect { triggerKeyCode = it } }
+        // Load the offline speech model now, so the first command does not wait for it.
+        QuickCommands.warmUp(this)
+        // Song PLUS edition: follow the drive for the drive coach (in memory only; skipped during a conversation).
+        DriveMonitor.start(
+            scope = scope,
+            enabled = { preferencesRepository.driveCoach.first() && preferencesRepository.vehicleControlEnabled.first() },
+            // Nor during an offline command: a status read in front of it would make the car do it late.
+            busy = { liveConversationController.inConversation || offlineTurnActive },
+            read = { (vehicleController.query(VehicleQuery.CAR_STATUS) as? VehicleDispatchResult.Success)?.note },
+            tipsEnabled = { preferencesRepository.driveTips.first() },
+            // Said like the greeting: same speaker (the driver's headrest where the car has one), same language.
+            speak = { tip ->
+                val wanted = preferencesRepository.greetingSpeaker.first()
+                val speaker = if (wanted == VoiceSpeaker.HEADREST && preferencesRepository.headrestSpeakerPresent.first() == false) {
+                    VoiceSpeaker.CAR
+                } else {
+                    wanted
+                }
+                val language = if (preferencesRepository.assistantLanguage.first() != AssistantLanguage.AUTO) null else AppLanguage.spokenName(this)
+                greet(DriveTipPrompt.build(tip, language), speaker) == GreetResult.STARTED
+            },
+        )
         AppLogger.log(TAG, "Connected, watching key $triggerKeyCode")
     }
 
@@ -123,6 +157,7 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
         banner.release()
         audioRecorder.cancel()
         liveConversationController.close()
+        DriveMonitor.stop()
         scope.cancel()
         super.onDestroy()
     }
@@ -202,10 +237,22 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
                 return@launch
             }
 
+            // Song PLUS edition: no point asking Gemini first when the car is on its own, or when the user has asked
+            // for every command to be done on the car. Trying would cost the connection timeout before the window
+            // even opens, which on a Wi-Fi dongle with no route out is several seconds of nothing happening.
+            if (runOfflineTurnIfChosen()) return@launch
+
             val liveStarted = liveConversationController.start { status -> handleStatus(status) }
             if (liveStarted) {
                 // The Live controller plays the listening tone itself (and the others).
                 banner.show(BannerMode.LISTENING)
+                return@launch
+            }
+
+            // Song PLUS edition: no Gemini (no internet, or it could not be reached) — car commands still work offline.
+            if (QuickCommands.isReady(this@WheelKeyService) && preferencesRepository.vehicleControlEnabled.first()) {
+                AppLogger.log(TAG, "Live unavailable (${liveConversationController.lastStartFailure}) — offline instant commands")
+                runOfflineTurn()
                 return@launch
             }
 
@@ -235,6 +282,68 @@ class WheelKeyService : AccessibilityService(), GreetingHost {
             earcons.play(Earcon.LISTENING)
             banner.show(BannerMode.LISTENING, labelOverride = text(R.string.banner_listening_press_to_stop))
         }
+    }
+
+    /**
+     * Song PLUS edition: runs this turn on the car when that is what it should be, and says whether it did.
+     *
+     * The same decision for the wheel button and for the app's own microphone, so the two never behave differently —
+     * which matters most when the user has switched the feature to always use the car, and is sitting in the app
+     * wondering why a tap still waits for Gemini. The banner is the service's, so it is shown over the app as well.
+     */
+    suspend fun runOfflineTurnIfChosen(): Boolean {
+        if (!QuickCommands.shouldRunOffline(this)) return false
+        if (!preferencesRepository.vehicleControlEnabled.first()) return false
+        AppLogger.log(TAG, "Offline instant commands chosen without trying Live")
+        runOfflineTurn()
+        return true
+    }
+
+    /** One offline car command: listen, recognise on the car, do it, and show what was done on the banner. */
+    @Volatile private var offlineTurnActive = false
+
+    private suspend fun runOfflineTurn() {
+        offlineTurnActive = true
+        try {
+            runOfflineTurnInner()
+        } finally {
+            offlineTurnActive = false
+        }
+    }
+
+    private suspend fun runOfflineTurnInner() {
+        // Start the car link while the driver is still speaking, so the command goes out the moment it is understood
+        // instead of waiting a few seconds for the helper to start.
+        vehicleController.warmUp()
+        earcons.play(Earcon.LISTENING)
+        banner.show(BannerMode.LISTENING, labelOverride = text(R.string.quick_listening))
+        val heard = QuickCommands.listenOnce(this, quickRecorder)
+        if (heard.isNullOrBlank()) {
+            earcons.play(Earcon.ERROR)
+            banner.show(BannerMode.ERROR, labelOverride = text(R.string.quick_not_heard), shownMs = 4_000)
+            return
+        }
+        // "Again"/"عاود" repeats the last command without the driver saying it all over; force past the dedupe ledger.
+        val repeat = QuickParser.isRepeat(heard)
+        // The phrase book, then "again", then the driver's own phrases learned from Gemini online.
+        val plan = QuickParser.parse(heard)
+            ?: (if (repeat) QuickCommands.lastPlan() else null)
+            ?: (if (repeat) null else QuickCommands.learnedPlan(this, heard))
+        if (plan == null) {
+            earcons.play(Earcon.OFFLINE)
+            val label = if (repeat) text(R.string.quick_nothing_to_repeat) else text(R.string.quick_not_command, heard)
+            banner.show(BannerMode.ERROR, labelOverride = label, shownMs = 5_000)
+            return
+        }
+        // Confirm what was understood before doing it: what was heard, and what the car is about to do.
+        val doing = QuickCommands.describe(this, plan)
+        AppLogger.log(TAG, "Offline: \"$heard\" -> $doing")
+        banner.show(BannerMode.THINKING, labelOverride = "« $heard » → $doing")
+        // The driver asked for it just now, so it is always sent: the 20-second duplicate check is only for Gemini
+        // repeating a command the car already did, and here it would silently skip a retry of one that did not work.
+        val outcome = QuickCommands.execute(this, plan, vehicleController, force = true)
+        earcons.play(if (outcome.ok) Earcon.DONE else Earcon.ERROR)
+        banner.show(if (outcome.ok) BannerMode.SPEAKING else BannerMode.ERROR, labelOverride = "« $heard »  ${outcome.summary}", shownMs = 6_000)
     }
 
     private fun runClassicTurn(file: File) {

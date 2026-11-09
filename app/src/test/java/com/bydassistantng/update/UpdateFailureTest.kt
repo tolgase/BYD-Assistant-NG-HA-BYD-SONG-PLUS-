@@ -45,6 +45,18 @@ class UpdateFailureTest {
     }
 
     @Test
+    fun yourOwnServerIsDownloadedFromBesideItsReleaseListWhateverAddressItLists() {
+        // Behind a path prefix (/Dlink) the server cannot see, it lists its APK without the prefix.
+        val source = UpdateSource.forUrl("https://cars.example/Dlink/api/app/voice/releases")!!
+        assertEquals("https://cars.example/Dlink/api/app/voice/apk", source.downloadUrlFor("https://cars.example/api/app/voice/apk"))
+        assertTrue(source.allowsDownload(source.downloadUrlFor("x").toHttpUrl()))
+        assertFalse(source.allowsDownload("https://evil.example/Dlink/api/app/voice/apk".toHttpUrl()))
+        // A GitHub source keeps the address GitHub gives.
+        val github = UpdateSource.forRepo("owner/app")!!
+        assertEquals("https://github.com/owner/app/releases/download/v1/app.apk", github.downloadUrlFor("https://github.com/owner/app/releases/download/v1/app.apk"))
+    }
+
+    @Test
     fun onlyRealRepositoryNamesAreAccepted() {
         assertNotNull(UpdateSource.forRepo("3freet/BYD-Assistant-NG"))
         assertNull(UpdateSource.forRepo(""))

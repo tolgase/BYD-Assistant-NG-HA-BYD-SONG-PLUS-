@@ -23,7 +23,13 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
-enum class AssistantLanguage(val bcp47: String) { AUTO(""), ENGLISH("en"), ARABIC("ar"), RUSSIAN("ru"), POLISH("pl") }
+/** The app's look: [NEON] matches the remote dashboard (dark, glowing accent); [CLASSIC] is the original calm style. */
+enum class UiStyle { NEON, CLASSIC }
+
+/** The accent colour of the Neon look, as ARGB. */
+enum class UiAccent(val argb: Long) { CYAN(0xFF00F0FF), PURPLE(0xFFB26BFF), GREEN(0xFF2BFF9A), AMBER(0xFFFFB02E) }
+
+enum class AssistantLanguage(val bcp47: String) { AUTO(""), ENGLISH("en"), ARABIC("ar"), RUSSIAN("ru"), POLISH("pl"), INDONESIAN("id"), FRENCH("fr") }
 
 /** Which Arabic the assistant should speak. [MATCH] says nothing, so the model follows the user. */
 enum class ArabicDialect(val promptName: String?) {
@@ -32,6 +38,7 @@ enum class ArabicDialect(val promptName: String?) {
     EGYPTIAN("Egyptian Arabic"),
     LEVANTINE("Levantine Arabic"),
     MAGHREBI("Maghrebi Arabic (North African)"),
+    TUNISIAN("Tunisian Arabic (Derja, which freely mixes in French words)"),
     MODERN_STANDARD("Modern Standard Arabic"),
 }
 
@@ -57,6 +64,10 @@ class PreferencesRepository @Inject constructor(@ApplicationContext context: Con
         val ARABIC_DIALECT = stringPreferencesKey("arabic_dialect")
         val ASSISTANT_VOICE = stringPreferencesKey("assistant_voice")
         val WEB_SEARCH_ENABLED = booleanPreferencesKey("web_search_enabled")
+        val UI_STYLE = stringPreferencesKey("ui_style")
+        val UI_ACCENT = stringPreferencesKey("ui_accent")
+        val UI_MOTION = booleanPreferencesKey("ui_motion")
+        val UI_LARGE_TEXT = booleanPreferencesKey("ui_large_text")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val AUTO_START_VISITED_AT = longPreferencesKey("auto_start_visited_at")
         val UPDATE_CHANNEL = stringPreferencesKey("update_channel")
@@ -82,9 +93,35 @@ class PreferencesRepository @Inject constructor(@ApplicationContext context: Con
         val HEADREST_SPEAKER_PRESENT = booleanPreferencesKey("headrest_speaker_present")
         val GREETING_ENABLED = booleanPreferencesKey("greeting_enabled")
         val GREETING_SPEAKER = stringPreferencesKey("greeting_speaker")
+        val WELCOME_SUMMARY = booleanPreferencesKey("welcome_summary")
+        val DRIVE_COACH = booleanPreferencesKey("drive_coach")
+        val DRIVE_TIPS = booleanPreferencesKey("drive_tips")
         val VOICE_SENSITIVITY = intPreferencesKey("voice_sensitivity")
         val LEVEL_GATE_ENABLED = booleanPreferencesKey("level_gate_enabled")
         val MUSIC_HINT_ENABLED = booleanPreferencesKey("music_hint_enabled")
+        val ASSISTANT_NAME = stringPreferencesKey("assistant_name")
+        val CAR_NAME = stringPreferencesKey("car_name")
+        val DRIVER_NAME = stringPreferencesKey("driver_name")
+        val NAMES_ASKED = booleanPreferencesKey("names_asked")
+    }
+
+    /** What the assistant is called, what the driver calls the car, and the driver's own name (each may be blank). */
+    val identity: Flow<AssistantIdentity> = dataStore.data.map {
+        AssistantIdentity(it[Keys.ASSISTANT_NAME].orEmpty(), it[Keys.CAR_NAME].orEmpty(), it[Keys.DRIVER_NAME].orEmpty())
+    }
+    /** Whether the user has been offered the naming step yet (new installs during setup, updated ones once on Home). */
+    val namesAsked: Flow<Boolean> = dataStore.data.map { it[Keys.NAMES_ASKED] ?: false }
+    suspend fun setIdentity(identity: AssistantIdentity) {
+        val clean = identity.cleaned()
+        dataStore.edit {
+            it[Keys.ASSISTANT_NAME] = clean.assistant
+            it[Keys.CAR_NAME] = clean.car
+            it[Keys.DRIVER_NAME] = clean.driver
+            it[Keys.NAMES_ASKED] = true
+        }
+    }
+    suspend fun markNamesAsked() {
+        dataStore.edit { it[Keys.NAMES_ASKED] = true }
     }
 
     val assistantLanguage: Flow<AssistantLanguage> = dataStore.data.map { prefs ->
@@ -111,7 +148,20 @@ class PreferencesRepository @Inject constructor(@ApplicationContext context: Con
      * (news, weather, sports, prices). Off by default: Google only allows search grounding on a paid
      * Gemini plan, and on a free key the server refuses the session outright (quota error) until the
      * controller retries without it. */
-    val webSearchEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.WEB_SEARCH_ENABLED] ?: false }
+    // Song PLUS edition: on unless switched off — the driver asks about news, weather and prices too. A key that cannot
+    // use Google Search is detected at the start of a conversation and the session simply runs without it.
+    // Song PLUS edition 1.7.0: how the app looks. Neon (the remote dashboard's look) or the original calm style,
+    // the accent colour, whether the voice orb moves, and larger text for reading at a glance while driving.
+    val uiStyle: Flow<UiStyle> = dataStore.data.map { p -> UiStyle.entries.find { it.name == p[Keys.UI_STYLE] } ?: UiStyle.NEON }
+    suspend fun setUiStyle(style: UiStyle) { dataStore.edit { it[Keys.UI_STYLE] = style.name } }
+    val uiAccent: Flow<UiAccent> = dataStore.data.map { p -> UiAccent.entries.find { it.name == p[Keys.UI_ACCENT] } ?: UiAccent.CYAN }
+    suspend fun setUiAccent(accent: UiAccent) { dataStore.edit { it[Keys.UI_ACCENT] = accent.name } }
+    val uiMotion: Flow<Boolean> = dataStore.data.map { it[Keys.UI_MOTION] ?: true }
+    suspend fun setUiMotion(enabled: Boolean) { dataStore.edit { it[Keys.UI_MOTION] = enabled } }
+    val uiLargeText: Flow<Boolean> = dataStore.data.map { it[Keys.UI_LARGE_TEXT] ?: false }
+    suspend fun setUiLargeText(enabled: Boolean) { dataStore.edit { it[Keys.UI_LARGE_TEXT] = enabled } }
+
+    val webSearchEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.WEB_SEARCH_ENABLED] ?: true }
     suspend fun setWebSearchEnabled(enabled: Boolean) {
         dataStore.edit { it[Keys.WEB_SEARCH_ENABLED] = enabled }
     }
@@ -134,9 +184,29 @@ class PreferencesRepository @Inject constructor(@ApplicationContext context: Con
      * Whether the assistant says hello by itself when the car has woken, the driver has sat down and the driver's door has
      * shut. Off by default: it is the one thing the assistant does without being asked.
      */
-    val greetingEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.GREETING_ENABLED] ?: false }
+    // Song PLUS edition: on unless switched off — the driver wants the welcome when getting in without setting it up.
+    val greetingEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.GREETING_ENABLED] ?: true }
     suspend fun setGreetingEnabled(enabled: Boolean) {
         dataStore.edit { it[Keys.GREETING_ENABLED] = enabled }
+    }
+
+    /** Song PLUS edition: the greeting is a summary of the car (energy, temperatures, weather, a comfort offer). */
+    val welcomeSummary: Flow<Boolean> = dataStore.data.map { it[Keys.WELCOME_SUMMARY] ?: true }
+    suspend fun setWelcomeSummary(enabled: Boolean) {
+        dataStore.edit { it[Keys.WELCOME_SUMMARY] = enabled }
+    }
+
+    /** Song PLUS edition: watch the drive (in memory only) so the assistant can coach on the last 15 or 30 minutes. */
+    val driveCoach: Flow<Boolean> = dataStore.data.map { it[Keys.DRIVE_COACH] ?: true }
+    suspend fun setDriveCoach(enabled: Boolean) {
+        dataStore.edit { it[Keys.DRIVE_COACH] = enabled }
+    }
+
+    /** Song PLUS edition: now and then, a short spoken tip while driving (and a break after two hours); needs the coach. */
+    val driveTips: Flow<Boolean> = dataStore.data.map { (it[Keys.DRIVE_TIPS] ?: true) && (it[Keys.DRIVE_COACH] ?: true) }
+    val driveTipsSetting: Flow<Boolean> = dataStore.data.map { it[Keys.DRIVE_TIPS] ?: true }
+    suspend fun setDriveTips(enabled: Boolean) {
+        dataStore.edit { it[Keys.DRIVE_TIPS] = enabled }
     }
 
     /**

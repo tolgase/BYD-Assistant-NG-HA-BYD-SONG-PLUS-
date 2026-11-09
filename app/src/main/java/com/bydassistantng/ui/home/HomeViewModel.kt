@@ -22,9 +22,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
+import com.bydassistantng.service.WheelKeyService
 
 private const val TAG = "HomeViewModel"
 private const val RECORDED_AUDIO_MIME_TYPE = "audio/m4a"
@@ -52,7 +54,7 @@ class HomeViewModel @Inject constructor(
     private val conversationController: ConversationController,
     private val liveConversationController: LiveConversationController,
     private val ttsEngine: TextToSpeechEngine,
-    preferencesRepository: PreferencesRepository,
+    private val preferencesRepository: PreferencesRepository,
     private val updateManager: UpdateManager,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
@@ -63,6 +65,16 @@ class HomeViewModel @Inject constructor(
         preferencesRepository.vehicleControlEnabled.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CoreFeatures.VEHICLE_CONTROL_DEFAULT)
 
     val updateState: StateFlow<UpdateState> = updateManager.state
+
+    /** Song PLUS edition: true until the user has seen the naming question once (installs that skipped setup's step). */
+    val askNames: StateFlow<Boolean> = preferencesRepository.namesAsked.map { !it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+    fun saveNames(identity: com.bydassistantng.data.AssistantIdentity) {
+        viewModelScope.launch { preferencesRepository.setIdentity(identity) }
+    }
+    fun skipNames() {
+        viewModelScope.launch { preferencesRepository.markNamesAsked() }
+    }
 
     /** The version just installed, until the note about it is dismissed. */
     val justUpdatedTo: StateFlow<String?> = updateManager.justUpdatedTo
@@ -80,6 +92,13 @@ class HomeViewModel @Inject constructor(
     private fun startNewTurn() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Connecting
+            // Song PLUS edition: a tap here belongs on the car under the same conditions as a press of the wheel
+            // button. The wheel-key service owns the microphone and the banner, so it runs the turn and reports it;
+            // this screen simply steps back. Without the service there is nothing to run it, so the tap goes to Gemini.
+            if (WheelKeyService.instance?.runOfflineTurnIfChosen() == true) {
+                _uiState.value = HomeUiState.Idle
+                return@launch
+            }
             val liveStarted = liveConversationController.start { status -> handleLiveStatus(status) }
             if (liveStarted) {
                 _uiState.value = HomeUiState.Listening

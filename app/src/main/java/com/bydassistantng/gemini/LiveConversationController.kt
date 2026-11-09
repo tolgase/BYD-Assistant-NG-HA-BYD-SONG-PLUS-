@@ -22,6 +22,12 @@ import com.bydassistantng.audio.LevelGate
 import com.bydassistantng.audio.VoiceSensitivity
 import com.bydassistantng.audio.VoiceSpeaker
 import com.bydassistantng.audio.LivePcmRecorder
+import com.bydassistantng.quick.QuickCommands
+import com.bydassistantng.drive.DriveMonitor
+import com.bydassistantng.drive.RideContext
+import com.bydassistantng.drive.RideStyle
+import com.bydassistantng.navigation.NavNotifications
+import com.bydassistantng.navigation.NavText
 import com.bydassistantng.audio.ExteriorVolume
 import com.bydassistantng.audio.PlaySoundOutsideTool
 import com.bydassistantng.audio.SpeakOutsideTool
@@ -102,6 +108,17 @@ private const val RESPONSE_TIMEOUT_MS = 12_000L
 // After a reply has finished playing, a beat before the "go ahead" chime, so it doesn't land on top of
 // the tail of the assistant's own voice.
 private const val REOPEN_DELAY_MS = 500L
+
+// Song PLUS edition: a Wi-Fi dongle in a moving car drops for a second or two and comes straight back. A session
+// that broke mid-conversation is retried for this long, waiting between attempts, before the driver is finally told
+// the connection was lost — so a brief blip no longer ends the conversation ("cuts and won't resume"). The resumption
+// handle is kept across the drop, so the model still knows what was being talked about once the link returns.
+private const val RECONNECT_WINDOW_MS = 9_000L
+private const val RECONNECT_RETRY_DELAY_MS = 1_200L
+
+// Song PLUS edition: how old the maps app's route and the last look at the seats may be to describe the ride.
+private const val NAV_FRESH_MS = 10 * 60_000L
+private const val PASSENGERS_FRESH_MS = 3 * 60_000L
 
 // The exterior speaker's helper starts this long after the vehicle helper, not beside it.
 private const val HELPER_STAGGER_MS = 1_500L
@@ -260,6 +277,12 @@ class LiveConversationController @Inject constructor(
 
     @Volatile private var conversationActive = false
 
+    /** Song PLUS edition: the server has warned it will close this session; move to a new one at the next break. */
+    @Volatile private var goingAway = false
+
+    /** Song PLUS edition: how many times a broken session may be picked up again before the driver is told. */
+    private val recovery = SessionRecovery()
+
     // Set when the model called end_conversation: the conversation ends once its goodbye has played.
     private var endAfterReply = false
 
@@ -320,6 +343,7 @@ class LiveConversationController @Inject constructor(
     private var musicPlayingNow = false
     private var musicCheckedAtMs = 0L
     private var musicHintForSession = false
+    private var identityForSession = com.bydassistantng.data.AssistantIdentity()
 
     // Between "the detector thinks that's the user" and "it is, cut the reply" / "it isn't, carry on": the
     // reply is turned down and the mic watched. Only touched from the capture thread and the resets below.
@@ -412,6 +436,11 @@ class LiveConversationController @Inject constructor(
         awaitingSpokenReply = false
         discardReply = false
         unansweredTurns = 0
+        // Song PLUS edition: a new conversation gets the whole recovery budget, and none of the last one's context —
+        // a resumption handle kept from an earlier conversation would quietly reopen it instead.
+        recovery.reset()
+        goingAway = false
+        if (ahead == null) liveClient.forgetResumption()
 
         lastStartFailure = StartFailure.NONE
         lastStartMessage = ""
@@ -515,6 +544,8 @@ class LiveConversationController @Inject constructor(
             close()
             return false
         }
+        // Song PLUS edition: the driver's first phrase is also heard offline, so a car command is done at once.
+        if (vehicleControlEnabledForSession && opening == null) QuickCommands.beginTap(context, vehicleController)
         awaitHeadrest()
         // The volume before the first tone, not after it: the tone is on the same stream as the voice.
         settleVolume(firstNoise)
@@ -547,6 +578,7 @@ class LiveConversationController @Inject constructor(
      */
     private suspend fun loadSessionSettings(forGreeting: Boolean) {
         languageForSession = preferencesRepository.assistantLanguage.first()
+        identityForSession = preferencesRepository.identity.first()
         AppLogger.log(TAG, "Reply language: $languageForSession")
         vehicleControlEnabledForSession = preferencesRepository.vehicleControlEnabled.first()
         dialectForSession = preferencesRepository.arabicDialect.first()
@@ -562,11 +594,29 @@ class LiveConversationController @Inject constructor(
             keepMapsDisabled = preferencesRepository.clusterKeepMapsDisabled.first(),
         )
         musicHintForSession = preferencesRepository.musicHintEnabled.first()
+        // Song PLUS edition: the ride as it stands, for the assistant's hidden manners (see [RideStyle]). Not for an opening the
+        // assistant speaks itself (the greeting, a drive tip): its session may have been opened ahead and must still match.
+        rideForSession = if (forGreeting) null else currentRide()
+        rideForSession?.let { AppLogger.log(TAG, "Ride: ${RideStyle.mode(it)} ($it)") }
         factsForSession = if (longTermForSession) memory.currentFacts() else emptyList()
         recentForSession = if (shortTermForSession && !forGreeting) memory.recentExchanges() else emptyList()
         if (factsForSession.isNotEmpty() || recentForSession.isNotEmpty()) {
             AppLogger.log(TAG, "Memory: ${factsForSession.size} remembered fact(s), ${recentForSession.size} recent exchange(s) carried in")
         }
+    }
+
+    private var rideForSession: RideContext? = null
+
+    /** Minutes on the road (the drive monitor), minutes to go (the maps app's navigation), and who is on board. */
+    private fun currentRide(): RideContext {
+        val now = SystemClock.elapsedRealtime()
+        val nav = NavNotifications.latest?.takeIf { now - it.atMs <= NAV_FRESH_MS }
+        val seen = DriveMonitor.latest?.takeIf { System.currentTimeMillis() - it.atMs <= PASSENGERS_FRESH_MS }
+        return RideContext(
+            rideMinutes = DriveMonitor.ride.minutes(System.currentTimeMillis()),
+            minutesToGo = nav?.let { NavText.parse(it.lines).minutesLeft },
+            passengers = seen?.facts?.passengers,
+        )
     }
 
     /** A server session opened ahead of a greeting, and what it was built from (it is only used if that still holds). */
@@ -746,6 +796,8 @@ class LiveConversationController @Inject constructor(
                         webSearch = webSearchForSession,
                         memory = MemoryContext(tools = longTermForSession, facts = factsForSession, recent = recentForSession),
                         musicHint = musicHintForSession,
+                        identity = identityForSession,
+                        ride = rideForSession,
                     ),
                 ),
             ),
@@ -783,9 +835,12 @@ class LiveConversationController @Inject constructor(
     }
 
     /** Opens (or re-opens) the WebSocket and starts listening to its events. */
-    private suspend fun openSession(): Boolean {
+    private suspend fun openSession(resume: Boolean = false): Boolean {
         val apiKey = sessionApiKey ?: return false
-        val ready = liveClient.connectAndSetup(apiKey, MODEL, sessionInstruction ?: return false, sessionTools, voiceForSession, SETUP_TIMEOUT_MS)
+        val ready = liveClient.connectAndSetup(
+            apiKey, MODEL, sessionInstruction ?: return false, sessionTools, voiceForSession, SETUP_TIMEOUT_MS,
+            resume = resume && liveClient.canResume,
+        )
         if (!ready) return false
         eventJob?.cancel()
         eventJob = scope.launch {
@@ -909,6 +964,7 @@ class LiveConversationController @Inject constructor(
 
     /** Called ~every 50ms from the mic's capture thread, whatever the gate. */
     private fun onMicChunk(chunk: ByteArray) {
+        QuickCommands.onLiveChunk(chunk)
         try {
             handleMicChunk(chunk)
         } catch (e: Throwable) {
@@ -1240,6 +1296,7 @@ class LiveConversationController @Inject constructor(
         nextStepJob = null
         doneChimeJob?.cancel()
         doneChimeJob = null
+        QuickCommands.endTap()
         recorder.stop()
         cabinNoise.estimate()?.let { lastNoise = it to SystemClock.elapsedRealtime() }
         cabinNoise.stop()
@@ -1283,7 +1340,10 @@ class LiveConversationController @Inject constructor(
                 endConversation(quiet = quietEnd)
                 return@launch
             }
-            if (!liveClient.isOpen && !reconnect()) {
+            // Song PLUS edition: the server warned it is about to close this session. Moving now, in the gap
+            // between the reply and the next question, is the difference between a seamless conversation and a
+            // sentence cut in half a few seconds from now.
+            if ((!liveClient.isOpen || goingAway) && !reconnect()) {
                 val offline = liveClient.lastSetupFailure == FailureKind.NO_NETWORK ||
                     (liveClient.lastSetupTimedOut && !NetworkState.isOnline(context))
                 fail(
@@ -1316,8 +1376,31 @@ class LiveConversationController @Inject constructor(
     /** The server closes an idle session after a while. The model loses the earlier turns when that
      * happens, but the conversation itself carries on. */
     private suspend fun reconnect(): Boolean {
-        AppLogger.log(TAG, "The Live session was closed by the server — reconnecting")
-        return openSession()
+        goingAway = false
+        val resume = liveClient.canResume
+        AppLogger.log(
+            TAG,
+            "Opening a new Live session" + if (resume) " and resuming the conversation on it" else " (the earlier turns are lost)",
+        )
+        // Try again across a short window rather than giving up on the first attempt: on a moving car's dongle the
+        // link is often back within a second or two, and a single failed attempt is exactly what the driver heard
+        // as the conversation cutting off and never coming back. A genuinely dead link fails every attempt and the
+        // window then ends the conversation honestly.
+        val deadline = SystemClock.elapsedRealtime() + RECONNECT_WINDOW_MS
+        var attempt = 0
+        while (conversationActive) {
+            attempt++
+            if (openSession(resume = resume)) {
+                if (attempt > 1) AppLogger.log(TAG, "Reconnected on attempt $attempt")
+                return true
+            }
+            if (SystemClock.elapsedRealtime() >= deadline) {
+                AppLogger.log(TAG, "Could not reopen the session within ${RECONNECT_WINDOW_MS}ms ($attempt attempt(s)) — giving up")
+                return false
+            }
+            delay(RECONNECT_RETRY_DELAY_MS)
+        }
+        return false
     }
 
     private suspend fun handleEvent(event: LiveEvent) {
@@ -1382,6 +1465,7 @@ class LiveConversationController @Inject constructor(
 
         when (event) {
             is LiveEvent.Audio -> withContext(Dispatchers.IO) {
+                QuickCommands.assistantSpeaking()
                 player.playChunk(Base64.decode(event.pcmBase64, Base64.NO_WRAP), playbackEpoch)
             }
             is LiveEvent.OutputTranscript -> {
@@ -1472,13 +1556,34 @@ class LiveConversationController @Inject constructor(
                 turnCompleted = true
                 listenCapJob?.cancel()
                 transcript.clear()
+                // A turn that got through says the link is working again: the budget is for a run of failures.
+                recovery.reset()
                 if (conversationActive) resumeAfterReply()
             }
             // A failed connection ends the conversation — it used to leave the mic open and capturing
             // into a dead socket forever.
             is LiveEvent.Failed -> {
                 AppLogger.logError(TAG, "Live session failed: ${event.reason} (${event.kind})")
-                fail(UserMessages.text(context, event.kind), offline = event.kind == FailureKind.NO_NETWORK)
+                // Song PLUS edition: a link that wobbled is not the end of the conversation. The audio already
+                // received keeps playing, and a new session is opened behind it — resumed, so the model still knows
+                // what was being talked about. The budget in [SessionRecovery] is what stops this becoming a loop.
+                // Mid-conversation the link was working moments ago, so a network blip is worth the bounded retry in
+                // reconnect() rather than an instant "connection lost" — the instantaneous network reading is false
+                // during the very drop we want to ride out. The retry window gives up honestly if the link is truly gone.
+                val recoverable = conversationActive &&
+                    recovery.allow(event.kind, networkUsable = true, SystemClock.elapsedRealtime())
+                if (recoverable) {
+                    AppLogger.log(TAG, "Recovering the conversation on a new session (attempt ${recovery.spent})")
+                    listenCapJob?.cancel()
+                    gate = Gate.BLOCKED
+                    resumeAfterReply(reopenQuickly = true)
+                } else {
+                    fail(UserMessages.text(context, event.kind), offline = event.kind == FailureKind.NO_NETWORK)
+                }
+            }
+            is LiveEvent.GoAway -> {
+                AppLogger.log(TAG, "The server will close this session (timeLeft=${event.timeLeft}) — moving at the next break")
+                goingAway = true
             }
             LiveEvent.Closed -> {
                 if (conversationActive) {

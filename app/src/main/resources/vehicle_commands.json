@@ -7,6 +7,7 @@
     "labelAr": "تشغيل المكيف",
     "labelRu": "Включение кондиционера",
     "labelPl": "Klimatyzacja: włączanie",
+    "labelId": "Daya AC",
     "deviceType": 1000,
     "featureId": 501219364,
     "invocation": {
@@ -22,7 +23,28 @@
         "on": 1,
         "off": 0
       }
-    }
+    },
+    "withoutAcService": {
+      "invocation": {
+        "type": "namedMethod",
+        "deviceClass": "ac",
+        "methodName": "start",
+        "offMethodName": "stop",
+        "paramTypes": [
+          "int"
+        ],
+        "argsTemplate": [
+          1
+        ]
+      },
+      "stateFeatureId": 1077936144,
+      "stateFeatureName": "Ac.AC_POWER_STATE",
+      "nativeFeatureId": 501219364,
+      "nativeFeatureName": "Ac.AC_POWER_STATE_SET"
+    },
+    "stateFeatureId": 1077936144,
+    "featureName": "Ac.AC_POWER_STATE_SET",
+    "stateFeatureName": "Ac.AC_POWER_STATE"
   },
   {
     "id": "ac.temperature",
@@ -32,6 +54,7 @@
     "labelAr": "درجة حرارة المكيف",
     "labelRu": "Температура кондиционера",
     "labelPl": "Temperatura klimatyzacji",
+    "labelId": "Suhu AC",
     "deviceType": 1000,
     "featureId": 501219368,
     "invocation": {
@@ -46,7 +69,39 @@
       "min": 17,
       "max": 33,
       "unit": "°C"
-    }
+    },
+    "withoutAcService": {
+      "invocation": {
+        "type": "namedMethod",
+        "deviceClass": "ac",
+        "methodName": "setAcTemperature",
+        "paramTypes": [
+          "int",
+          "int",
+          "int",
+          "int"
+        ],
+        "argsTemplate": [
+          1,
+          null,
+          1,
+          1
+        ]
+      },
+      "stateFeatureId": 1077936168,
+      "stateFeatureName": "Ac.AC_TEMP_MAIN",
+      "requires": {
+        "featureId": 1077936167,
+        "featureName": "Ac.AC_TEMPERATURE_UNIT",
+        "equals": 1,
+        "message": "The A/C is not showing Celsius, so its temperature is not set from here. Nothing was sent."
+      },
+      "nativeFeatureId": 501219368,
+      "nativeFeatureName": "Ac.AC_TEMP_MAIN_SET"
+    },
+    "stateFeatureId": 1077936168,
+    "featureName": "Ac.AC_TEMP_MAIN_SET",
+    "stateFeatureName": "Ac.AC_TEMP_MAIN"
   },
   {
     "id": "ac.fan",
@@ -56,6 +111,7 @@
     "labelAr": "سرعة مروحة المكيف",
     "labelRu": "Скорость вентилятора",
     "labelPl": "Prędkość nawiewu",
+    "labelId": "Kecepatan kipas AC",
     "deviceType": 1000,
     "featureId": 501219340,
     "invocation": {
@@ -69,7 +125,29 @@
       "type": "range",
       "min": 0,
       "max": 7
-    }
+    },
+    "withoutAcService": {
+      "invocation": {
+        "type": "namedMethod",
+        "deviceClass": "ac",
+        "methodName": "setAcWindLevel",
+        "paramTypes": [
+          "int",
+          "int"
+        ],
+        "argsTemplate": [
+          1,
+          null
+        ]
+      },
+      "stateFeatureId": 1077936156,
+      "stateFeatureName": "Ac.AC_WIND_LEVEL",
+      "nativeFeatureId": 501219340,
+      "nativeFeatureName": "Ac.AC_WIND_LEVEL_SET"
+    },
+    "stateFeatureId": 1077936156,
+    "featureName": "Ac.AC_WIND_LEVEL_SET",
+    "stateFeatureName": "Ac.AC_WIND_LEVEL"
   },
   {
     "id": "ac.windMode",
@@ -79,6 +157,7 @@
     "labelAr": "اتجاه الهواء",
     "labelRu": "Направление воздуха",
     "labelPl": "Kierunek nawiewu",
+    "labelId": "Arah aliran udara",
     "deviceType": 1000,
     "featureId": 501219336,
     "invocation": {
@@ -97,7 +176,29 @@
         "feetAndDefrost": 4,
         "defrost": 5
       }
-    }
+    },
+    "withoutAcService": {
+      "invocation": {
+        "type": "namedMethod",
+        "deviceClass": "ac",
+        "methodName": "setAcWindMode",
+        "paramTypes": [
+          "int",
+          "int"
+        ],
+        "argsTemplate": [
+          1,
+          null
+        ]
+      },
+      "stateFeatureId": 1077936152,
+      "stateFeatureName": "Ac.AC_WIND_MODE",
+      "nativeFeatureId": 501219336,
+      "nativeFeatureName": "Ac.AC_WIND_MODE_SET"
+    },
+    "stateFeatureId": 1077936152,
+    "featureName": "Ac.AC_WIND_MODE_SET",
+    "stateFeatureName": "Ac.AC_WIND_MODE"
   },
   {
     "id": "window.driver",
@@ -107,8 +208,10 @@
     "labelAr": "نافذة السائق",
     "labelRu": "Окно водителя",
     "labelPl": "Szyba kierowcy",
+    "labelId": "Jendela pengemudi",
     "deviceType": 1001,
     "featureId": 1125122104,
+    "featureName": "Bodywork.BODYWORK_LF_WINDOW_CTRL_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -131,8 +234,10 @@
     "labelAr": "نافذة الراكب",
     "labelRu": "Окно пассажира",
     "labelPl": "Szyba pasażera",
+    "labelId": "Jendela penumpang",
     "deviceType": 1001,
     "featureId": 1125122107,
+    "featureName": "Bodywork.BODYWORK_RF_WINDOW_CTRL_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -155,8 +260,10 @@
     "labelAr": "النافذة الخلفية اليسرى",
     "labelRu": "Заднее левое окно",
     "labelPl": "Tylna lewa szyba",
+    "labelId": "Jendela belakang kiri",
     "deviceType": 1001,
     "featureId": 1125122112,
+    "featureName": "Bodywork.BODYWORK_LR_WINDOW_CTRL_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -179,8 +286,10 @@
     "labelAr": "النافذة الخلفية اليمنى",
     "labelRu": "Заднее правое окно",
     "labelPl": "Tylna prawa szyba",
+    "labelId": "Jendela belakang kanan",
     "deviceType": 1001,
     "featureId": 1125122115,
+    "featureName": "Bodywork.BODYWORK_RR_WINDOW_CTRL_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -203,8 +312,10 @@
     "labelAr": "فتحة السقف",
     "labelRu": "Люк",
     "labelPl": "Szyberdach",
+    "labelId": "Sunroof",
     "deviceType": 1001,
-    "featureId": 1125122056,
+    "featureId": 1330642976,
+    "featureName": "Bodywork.BODYWORK_MOON_ROOF_OPEN_PERCENT_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -212,10 +323,37 @@
       "type": "fixedEnum",
       "options": {
         "close": 0,
-        "open": 252,
-        "breath": 253
+        "half": 50,
+        "open": 100
       }
-    }
+    },
+    "stateFeatureId": 1101004808,
+    "stateFeatureName": "Bodywork.BODYWORK_MOON_ROOF_OPEN_PERCENT"
+  },
+  {
+    "id": "sunroof.tilt",
+    "domain": "BODYWORK",
+    "displayName": "Tilt the sunroof open at the back (vent position)",
+    "label": "Sunroof tilt",
+    "labelAr": "إمالة فتحة السقف",
+    "labelRu": "Люк в режиме вентиляции",
+    "labelPl": "Szyberdach uchylony",
+    "labelId": "Sunroof miring",
+    "deviceType": 1001,
+    "featureId": 1125122056,
+    "featureName": "Bodywork.BODYWORK_MOON_ROOF_CTL_SET",
+    "invocation": {
+      "type": "genericFeatureSet"
+    },
+    "parameter": {
+      "type": "fixedEnum",
+      "options": {
+        "tilt": 253,
+        "close": 0
+      }
+    },
+    "stateFeatureId": 1101004808,
+    "stateFeatureName": "Bodywork.BODYWORK_MOON_ROOF_OPEN_PERCENT"
   },
   {
     "id": "sunroof.openPercent",
@@ -225,8 +363,10 @@
     "labelAr": "وضع فتحة السقف",
     "labelRu": "Положение люка",
     "labelPl": "Położenie szyberdachu",
+    "labelId": "Posisi sunroof",
     "deviceType": 1001,
     "featureId": 1330642976,
+    "featureName": "Bodywork.BODYWORK_MOON_ROOF_OPEN_PERCENT_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -245,8 +385,10 @@
     "labelAr": "الستارة الشمسية",
     "labelRu": "Солнцезащитная шторка",
     "labelPl": "Roleta przeciwsłoneczna",
+    "labelId": "Tirai matahari",
     "deviceType": 1001,
     "featureId": 1330642984,
+    "featureName": "Bodywork.BODYWORK_SUNSHADE_PANEL_PERCENT_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -265,6 +407,7 @@
     "labelAr": "مستوى الصوت",
     "labelRu": "Громкость",
     "labelPl": "Głośność",
+    "labelId": "Volume",
     "invocation": {
       "type": "streamVolume",
       "stream": 3
@@ -283,8 +426,10 @@
     "labelAr": "صوت الوسائط",
     "labelRu": "Звук мультимедиа",
     "labelPl": "Dźwięk multimediów",
+    "labelId": "Suara media",
     "deviceType": 1002,
     "featureId": 470810680,
+    "featureName": "Audio.AUDIO_MEDIA_SOUND_MUTE_SET_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -295,7 +440,8 @@
         "mute": 2
       }
     },
-    "stateFeatureId": 1339031597
+    "stateFeatureId": 1339031597,
+    "stateFeatureName": "Audio.AUDIO_MEDIA_SOUND_MUTE_STATE"
   },
   {
     "id": "audio.navigationVolume",
@@ -305,8 +451,10 @@
     "labelAr": "صوت الملاحة",
     "labelRu": "Громкость навигации",
     "labelPl": "Głośność nawigacji",
+    "labelId": "Volume navigasi",
     "deviceType": 1002,
     "featureId": 1309081616,
+    "featureName": "Audio.AUDIO_NAVI_VOLUME_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -315,7 +463,8 @@
       "min": 0,
       "max": 10
     },
-    "stateFeatureId": 1108344868
+    "stateFeatureId": 1108344868,
+    "stateFeatureName": "Audio.AUDIO_NAVI_VOLUME"
   },
   {
     "id": "audio.soundFocus",
@@ -325,8 +474,10 @@
     "labelAr": "تركيز الصوت",
     "labelRu": "Фокус звука",
     "labelPl": "Ognisko dźwięku",
+    "labelId": "Fokus suara",
     "deviceType": 1002,
     "featureId": 470810653,
+    "featureName": "Audio.AUDIO_LEFT_RIGHT_FIELD_SET_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -338,7 +489,8 @@
         "back_seats": 4
       }
     },
-    "stateFeatureId": 1339031565
+    "stateFeatureId": 1339031565,
+    "stateFeatureName": "Audio.AUDIO_SOUND_FIELD_FOCUS_STATE"
   },
   {
     "id": "audio.spaceSound",
@@ -348,8 +500,10 @@
     "labelAr": "الصوت المحيطي",
     "labelRu": "Объёмный звук",
     "labelPl": "Dźwięk przestrzenny",
+    "labelId": "Suara ruang",
     "deviceType": 1002,
     "featureId": 372244496,
+    "featureName": "Audio.AUDIO_SPACE_SOUND_EFFECT_STATUS_IVI_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -360,7 +514,8 @@
         "on": 2
       }
     },
-    "stateFeatureId": 1263534096
+    "stateFeatureId": 1263534096,
+    "stateFeatureName": "Audio.AUDIO_SPACE_SOUND_EFFECT_STATUS_IVI"
   },
   {
     "id": "audio.spaceSoundMode",
@@ -370,8 +525,10 @@
     "labelAr": "قوة الصوت المحيطي",
     "labelRu": "Сила объёмного звука",
     "labelPl": "Siła dźwięku przestrzennego",
+    "labelId": "Kekuatan suara ruang",
     "deviceType": 1002,
     "featureId": 372244498,
+    "featureName": "Audio.AUDIO_SPACE_SOUND_MODE_STATUS_IVI_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -383,7 +540,8 @@
         "strong": 3
       }
     },
-    "stateFeatureId": 1263534098
+    "stateFeatureId": 1263534098,
+    "stateFeatureName": "Audio.AUDIO_SPACE_SOUND_MODE_STATUS_IVI"
   },
   {
     "id": "audio.headrestSound",
@@ -393,8 +551,10 @@
     "labelAr": "صوت مسند الرأس",
     "labelRu": "Звук в подголовнике",
     "labelPl": "Dźwięk w zagłówku",
+    "labelId": "Suara sandaran kepala",
     "deviceType": 1002,
     "featureId": -1676672971,
+    "featureName": "Audio.AUDIO_HEADREST_SOUND_EFFECT_STATUS_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -407,7 +567,8 @@
         "exclusive": 4
       }
     },
-    "stateFeatureId": 1253048341
+    "stateFeatureId": 1253048341,
+    "stateFeatureName": "Audio.AUDIO_HEADREST_SOUND_EFFECT_STATUS_IVI"
   },
   {
     "id": "audio.soundStyle",
@@ -417,8 +578,10 @@
     "labelAr": "نمط الصوت",
     "labelRu": "Стиль звука",
     "labelPl": "Styl dźwięku",
+    "labelId": "Gaya suara",
     "deviceType": 1002,
     "featureId": -1693450216,
+    "featureName": "Audio.AUDIO_DYNAUDIO_SOUND_FEATURES_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -433,7 +596,8 @@
         "custom": 6
       }
     },
-    "stateFeatureId": 1281359880
+    "stateFeatureId": 1281359880,
+    "stateFeatureName": "Audio.AUDIO_DYNAUDIO_SOUND_FEATURES_IVI"
   },
   {
     "id": "trunk",
@@ -443,8 +607,10 @@
     "labelAr": "صندوق السيارة",
     "labelRu": "Багажник",
     "labelPl": "Bagażnik",
+    "labelId": "Bagasi",
     "deviceType": 1023,
     "featureId": 1125122080,
+    "featureName": "Setting.SET_VOICE_CTRL_BACK_DOOR_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -465,6 +631,7 @@
     "labelAr": "تدوير الشاشة",
     "labelRu": "Поворот экрана",
     "labelPl": "Obrót ekranu",
+    "labelId": "Rotasi layar",
     "invocation": {
       "type": "namedMethod",
       "deviceClass": "setting",
@@ -492,19 +659,22 @@
     "labelAr": "طي المرايا تلقائيا",
     "labelRu": "Автоскладывание зеркал",
     "labelPl": "Automatyczne składanie lusterek",
+    "labelId": "Lipat spion otomatis",
     "deviceType": 1023,
     "featureId": 1312817178,
+    "featureName": "Setting.SET_CAR_EXTREARMIR_FOLLOWUP_SWITCH_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
     "parameter": {
       "type": "fixedEnum",
       "options": {
-        "off": 0,
+        "off": 2,
         "on": 1
       }
     },
-    "stateFeatureId": 1081081884
+    "stateFeatureId": 1081081884,
+    "stateFeatureName": "Setting.SET_CAR_EXTREARMIR_FOLLOWUP_SWITCH"
   },
   {
     "id": "mirrors.tiltInReverse",
@@ -514,8 +684,10 @@
     "labelAr": "إمالة المرايا عند الرجوع",
     "labelRu": "Наклон зеркал при заднем ходе",
     "labelPl": "Pochylanie lusterek na biegu wstecznym",
+    "labelId": "Spion menunduk saat mundur",
     "deviceType": 1023,
     "featureId": 1312817180,
+    "featureName": "Setting.SET_CAR_REAR_VIEW_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -527,10 +699,12 @@
       }
     },
     "stateFeatureId": 1228931096,
+    "stateFeatureName": "Setting.SET_CAR_REAR_VIEW",
     "overrides": [
       {
         "whenValue": 0,
         "featureId": 1312817180,
+        "featureName": "Setting.SET_CAR_REAR_VIEW_SET",
         "sendValue": 2
       }
     ]
@@ -545,48 +719,38 @@
     "labelPl": "Kolor oświetlenia nastrojowego",
     "deviceType": 1023,
     "invocation": {
-      "type": "namedMethod",
-      "deviceClass": "setting",
-      "methodName": "setIALColor",
-      "paramTypes": [
-        "int",
-        "int",
-        "int"
-      ],
-      "argsTemplate": [
-        3,
-        null,
-        1
-      ]
+      "type": "genericFeatureSet"
     },
     "parameter": {
       "type": "fixedEnum",
       "options": {
-        "pink": 4,
-        "magenta": 4,
-        "purple": 8,
-        "dark_blue": 12,
-        "blue": 16,
-        "sky_blue": 24,
-        "cyan": 32,
-        "mint": 48,
-        "light_green": 52,
-        "green": 56,
-        "lime": 64,
-        "yellow": 80,
-        "gold": 84,
-        "amber": 88,
-        "orange": 92,
-        "deep_orange": 96,
-        "red": 104,
-        "crimson": 108,
-        "coral": 112,
-        "warm_white": 116,
-        "cold_white": 124,
-        "ice_blue": 127
+        "pink": 1,
+        "purple": 2,
+        "dark_blue": 3,
+        "blue": 4,
+        "sky_blue": 6,
+        "cyan": 8,
+        "mint": 12,
+        "light_green": 13,
+        "green": 14,
+        "lime": 16,
+        "yellow": 20,
+        "gold": 21,
+        "amber": 22,
+        "orange": 23,
+        "deep_orange": 24,
+        "red": 26,
+        "crimson": 27,
+        "coral": 28,
+        "warm_white": 29,
+        "cold_white": 31
       }
     },
-    "stateFeatureId": 1121976336
+    "stateFeatureId": 1121976336,
+    "featureId": 1069547528,
+    "labelId": "Warna lampu ambient",
+    "featureName": "Setting.SET_INTERIOR_ATMOSPHERE_LAMP_COLOR_SET",
+    "stateFeatureName": "Setting.SET_IAL_FRONT_COLOR"
   },
   {
     "id": "ambient.brightness",
@@ -598,27 +762,18 @@
     "labelPl": "Jasność oświetlenia nastrojowego",
     "deviceType": 1023,
     "invocation": {
-      "type": "namedMethod",
-      "deviceClass": "setting",
-      "methodName": "setIALBrightness",
-      "paramTypes": [
-        "int",
-        "int",
-        "int"
-      ],
-      "argsTemplate": [
-        3,
-        null,
-        1
-      ]
+      "type": "genericFeatureSet"
     },
     "parameter": {
       "type": "range",
       "min": 1,
-      "max": 6
+      "max": 10
     },
-    "valueOffset": -1,
-    "stateFeatureId": 1121976328
+    "stateFeatureId": 1121976328,
+    "featureId": 1069547536,
+    "labelId": "Kecerahan lampu ambient",
+    "featureName": "Setting.SET_INTERIOR_ATMOSPHERE_LAMP_BRIGHTNESS_SET",
+    "stateFeatureName": "Setting.SET_IAL_FRONT_BRIGHTNESS"
   },
   {
     "id": "ambient.dynamic",
@@ -628,8 +783,10 @@
     "labelAr": "الألوان الديناميكية",
     "labelRu": "Динамические цвета",
     "labelPl": "Kolory dynamiczne",
+    "labelId": "Warna dinamis",
     "deviceType": 1004,
     "featureId": 1276153886,
+    "featureName": "Light.LIGHT_DYNAMIC_COLORFUL_SWITHCH_STATE_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -640,7 +797,8 @@
         "off": 2
       }
     },
-    "stateFeatureId": 679477578
+    "stateFeatureId": 679477578,
+    "stateFeatureName": "Light.LIGHT_DYNAMIC_COLORFUL_SWITHCH_STATE"
   },
   {
     "id": "fridge.mode",
@@ -650,8 +808,10 @@
     "labelAr": "الثلاجة",
     "labelRu": "Холодильник",
     "labelPl": "Lodówka",
+    "labelId": "Kulkas",
     "deviceType": 1023,
     "featureId": 850427920,
+    "featureName": "Setting.SETTING_VEHICLE_REFRIGERATOR_WORKING_STATUS_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -663,7 +823,8 @@
         "heat": 2
       }
     },
-    "stateFeatureId": 1220542488
+    "stateFeatureId": 1220542488,
+    "stateFeatureName": "Setting.SETTING_VEHICLE_REFRIGERATOR_WORKING_STATUS"
   },
   {
     "id": "fridge.cool.temperature",
@@ -673,8 +834,10 @@
     "labelAr": "درجة تبريد الثلاجة",
     "labelRu": "Охлаждение холодильника",
     "labelPl": "Chłodzenie lodówki",
+    "labelId": "Suhu pendingin kulkas",
     "deviceType": 1023,
     "featureId": 850427928,
+    "featureName": "Setting.SETTING_VEHICLE_REFRIGERATOR_TEMP_REGULATION_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -685,9 +848,11 @@
       "unit": "°C"
     },
     "stateFeatureId": 1220542480,
+    "stateFeatureName": "Setting.SETTING_VEHICLE_REFRIGERATOR_TEMP_REGULATION",
     "valueOffset": 19,
     "requires": {
       "featureId": 1220542488,
+      "featureName": "Setting.SETTING_VEHICLE_REFRIGERATOR_WORKING_STATUS",
       "equals": 1,
       "message": "The fridge isn't cooling. Switch it to cooling mode first."
     }
@@ -700,8 +865,10 @@
     "labelAr": "تدفئة مقعد السائق",
     "labelRu": "Подогрев сиденья водителя",
     "labelPl": "Podgrzewanie fotela kierowcy",
+    "labelId": "Pemanas jok pengemudi",
     "deviceType": 1023,
     "featureId": 1125122068,
+    "featureName": "Setting.SET_DRIVER_SEAT_HEATING_STATE_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -713,7 +880,8 @@
         "high": 3
       }
     },
-    "stateFeatureId": 1335885835
+    "stateFeatureId": 1335885835,
+    "stateFeatureName": "Setting.SET_DRIVER_SEAT_HEATING_STATE"
   },
   {
     "id": "seat.driver.ventilation",
@@ -723,8 +891,10 @@
     "labelAr": "تهوية مقعد السائق",
     "labelRu": "Вентиляция сиденья водителя",
     "labelPl": "Wentylacja fotela kierowcy",
+    "labelId": "Ventilasi jok pengemudi",
     "deviceType": 1023,
     "featureId": 1125122064,
+    "featureName": "Setting.SET_DRIVER_SEAT_VENTILATING_STATE_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -736,7 +906,8 @@
         "high": 3
       }
     },
-    "stateFeatureId": 1335885832
+    "stateFeatureId": 1335885832,
+    "stateFeatureName": "Setting.SET_DRIVER_SEAT_VENTILATING_STATE"
   },
   {
     "id": "seat.passenger.heating",
@@ -746,8 +917,10 @@
     "labelAr": "تدفئة مقعد الراكب",
     "labelRu": "Подогрев сиденья пассажира",
     "labelPl": "Podgrzewanie fotela pasażera",
+    "labelId": "Pemanas jok penumpang",
     "deviceType": 1023,
     "featureId": 1125122076,
+    "featureName": "Setting.SET_PASSENGER_SEAT_HEATING_STATE_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -759,7 +932,8 @@
         "high": 3
       }
     },
-    "stateFeatureId": 1335885843
+    "stateFeatureId": 1335885843,
+    "stateFeatureName": "Setting.SET_PASSENGER_SEAT_HEATING_STATE"
   },
   {
     "id": "seat.passenger.ventilation",
@@ -769,8 +943,10 @@
     "labelAr": "تهوية مقعد الراكب",
     "labelRu": "Вентиляция сиденья пассажира",
     "labelPl": "Wentylacja fotela pasażera",
+    "labelId": "Ventilasi jok penumpang",
     "deviceType": 1023,
     "featureId": 1125122072,
+    "featureName": "Setting.SET_PASSENGER_SEAT_VENTILATING_STATE_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -782,7 +958,8 @@
         "high": 3
       }
     },
-    "stateFeatureId": 1335885840
+    "stateFeatureId": 1335885840,
+    "stateFeatureName": "Setting.SET_PASSENGER_SEAT_VENTILATING_STATE"
   },
   {
     "id": "seat.rearLeft.heating",
@@ -792,8 +969,10 @@
     "labelAr": "تدفئة المقعد الخلفي الأيسر",
     "labelRu": "Подогрев заднего левого сиденья",
     "labelPl": "Podgrzewanie tylnego lewego fotela",
+    "labelId": "Pemanas jok belakang kiri",
     "deviceType": 1023,
     "featureId": 1125122091,
+    "featureName": "Setting.SET_REAR_LEFT_SEAT_HEATING_STATE_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -805,7 +984,8 @@
         "high": 3
       }
     },
-    "stateFeatureId": 1214251019
+    "stateFeatureId": 1214251019,
+    "stateFeatureName": "Setting.SET_REAR_LEFT_SEAT_HEATING_STATE"
   },
   {
     "id": "seat.rearLeft.ventilation",
@@ -815,8 +995,10 @@
     "labelAr": "تهوية المقعد الخلفي الأيسر",
     "labelRu": "Вентиляция заднего левого сиденья",
     "labelPl": "Wentylacja tylnego lewego fotela",
+    "labelId": "Ventilasi jok belakang kiri",
     "deviceType": 1023,
     "featureId": 1125122088,
+    "featureName": "Setting.SET_REAR_LEFT_SEAT_VENTILATING_STATE_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -828,7 +1010,8 @@
         "high": 3
       }
     },
-    "stateFeatureId": 1214251016
+    "stateFeatureId": 1214251016,
+    "stateFeatureName": "Setting.SET_REAR_LEFT_SEAT_VENTILATING_STATE"
   },
   {
     "id": "seat.rearRight.heating",
@@ -838,8 +1021,10 @@
     "labelAr": "تدفئة المقعد الخلفي الأيمن",
     "labelRu": "Подогрев заднего правого сиденья",
     "labelPl": "Podgrzewanie tylnego prawego fotela",
+    "labelId": "Pemanas jok belakang kanan",
     "deviceType": 1023,
     "featureId": 1125122099,
+    "featureName": "Setting.SET_REAR_RIGHT_SEAT_HEATING_STATE_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -851,7 +1036,8 @@
         "high": 3
       }
     },
-    "stateFeatureId": 1214251027
+    "stateFeatureId": 1214251027,
+    "stateFeatureName": "Setting.SET_REAR_RIGHT_SEAT_HEATING_STATE"
   },
   {
     "id": "seat.rearRight.ventilation",
@@ -861,8 +1047,10 @@
     "labelAr": "تهوية المقعد الخلفي الأيمن",
     "labelRu": "Вентиляция заднего правого сиденья",
     "labelPl": "Wentylacja tylnego prawego fotela",
+    "labelId": "Ventilasi jok belakang kanan",
     "deviceType": 1023,
     "featureId": 1125122096,
+    "featureName": "Setting.SET_REAR_RIGHT_SEAT_VENTILATING_STATE_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -874,7 +1062,8 @@
         "high": 3
       }
     },
-    "stateFeatureId": 1214251024
+    "stateFeatureId": 1214251024,
+    "stateFeatureName": "Setting.SET_REAR_RIGHT_SEAT_VENTILATING_STATE"
   },
   {
     "id": "steeringWheel.heating",
@@ -884,8 +1073,10 @@
     "labelAr": "تدفئة المقود",
     "labelRu": "Подогрев руля",
     "labelPl": "Podgrzewanie kierownicy",
+    "labelId": "Pemanas setir",
     "deviceType": 1023,
     "featureId": 944767029,
+    "featureName": "Setting.SET_STEERING_WHEEL_HEAT_STATE_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -896,7 +1087,8 @@
         "on": 2
       }
     },
-    "stateFeatureId": 1116733454
+    "stateFeatureId": 1116733454,
+    "stateFeatureName": "Setting.SET_STEERING_WHEEL_HEAT_STATE"
   },
   {
     "id": "fridge.heat.temperature",
@@ -906,8 +1098,10 @@
     "labelAr": "درجة تسخين الثلاجة",
     "labelRu": "Нагрев холодильника",
     "labelPl": "Podgrzewanie lodówki",
+    "labelId": "Suhu penghangat kulkas",
     "deviceType": 1023,
     "featureId": 850427928,
+    "featureName": "Setting.SETTING_VEHICLE_REFRIGERATOR_TEMP_REGULATION_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -918,8 +1112,10 @@
       "unit": "°C"
     },
     "stateFeatureId": 1220542480,
+    "stateFeatureName": "Setting.SETTING_VEHICLE_REFRIGERATOR_TEMP_REGULATION",
     "requires": {
       "featureId": 1220542488,
+      "featureName": "Setting.SETTING_VEHICLE_REFRIGERATOR_WORKING_STATUS",
       "equals": 2,
       "message": "The fridge isn't heating. Switch it to heating mode first."
     }
@@ -932,6 +1128,7 @@
     "labelAr": "تسجيل الكاميرا",
     "labelRu": "Запись видеорегистратора",
     "labelPl": "Nagrywanie wideorejestratora",
+    "labelId": "Perekaman dashcam",
     "invocation": {
       "type": "binderCommand",
       "serviceName": "IBYDCDRService",
@@ -976,6 +1173,7 @@
     "labelAr": "صورة من الكاميرا",
     "labelRu": "Фото с видеорегистратора",
     "labelPl": "Zdjęcie z wideorejestratora",
+    "labelId": "Foto dashcam",
     "invocation": {
       "type": "binderCommand",
       "serviceName": "IBYDCDRService",
@@ -1019,6 +1217,7 @@
     "labelAr": "حفظ مقطع الكاميرا",
     "labelRu": "Сохранение клипа регистратора",
     "labelPl": "Zapis nagrania wideorejestratora",
+    "labelId": "Simpan klip dashcam",
     "invocation": {
       "type": "binderCommand",
       "serviceName": "IBYDCDRService",
@@ -1063,6 +1262,7 @@
     "labelAr": "صوت الكاميرا",
     "labelRu": "Звук видеорегистратора",
     "labelPl": "Dźwięk wideorejestratora",
+    "labelId": "Audio dashcam",
     "invocation": {
       "type": "binderCommand",
       "serviceName": "IBYDCDRService",
@@ -1107,6 +1307,7 @@
     "labelAr": "حساسية الكاميرا",
     "labelRu": "Чувствительность регистратора",
     "labelPl": "Czułość wideorejestratora",
+    "labelId": "Sensitivitas dashcam",
     "invocation": {
       "type": "binderCommand",
       "serviceName": "IBYDCDRService",
@@ -1152,8 +1353,10 @@
     "labelAr": "وضع نافذة السائق",
     "labelRu": "Положение окна водителя",
     "labelPl": "Położenie szyby kierowcy",
+    "labelId": "Posisi jendela pengemudi",
     "deviceType": 1001,
     "featureId": 1276219408,
+    "featureName": "Bodywork.BODYWORK_LF_WINDOW_TARGET_POSITION_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -1164,10 +1367,12 @@
       "unit": "%"
     },
     "stateFeatureId": 947912728,
+    "stateFeatureName": "Bodywork.BODYWORK_WINDOW_LEFT_FRONT_PERCENT",
     "stateTolerance": 3,
     "gradual": true,
     "valueOffset": 100,
-    "inverted": true
+    "inverted": true,
+    "requiresReadbackElsewhere": true
   },
   {
     "id": "window.passenger.position",
@@ -1177,8 +1382,10 @@
     "labelAr": "وضع نافذة الراكب",
     "labelRu": "Положение окна пассажира",
     "labelPl": "Położenie szyby pasażera",
+    "labelId": "Posisi jendela penumpang",
     "deviceType": 1001,
     "featureId": 1276219424,
+    "featureName": "Bodywork.BODYWORK_RF_WINDOW_TARGET_POSITION_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -1189,10 +1396,12 @@
       "unit": "%"
     },
     "stateFeatureId": 1267728400,
+    "stateFeatureName": "Bodywork.BODYWORK_WINDOW_RIGHT_FRONT_PERCENT",
     "stateTolerance": 3,
     "gradual": true,
     "valueOffset": 100,
-    "inverted": true
+    "inverted": true,
+    "requiresReadbackElsewhere": true
   },
   {
     "id": "window.rearLeft.position",
@@ -1202,8 +1411,10 @@
     "labelAr": "وضع النافذة الخلفية اليسرى",
     "labelRu": "Положение заднего левого окна",
     "labelPl": "Położenie tylnej lewej szyby",
+    "labelId": "Posisi jendela belakang kiri",
     "deviceType": 1001,
     "featureId": 1276219416,
+    "featureName": "Bodywork.BODYWORK_LR_WINDOW_TARGET_POSITION_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -1214,10 +1425,12 @@
       "unit": "%"
     },
     "stateFeatureId": 947912736,
+    "stateFeatureName": "Bodywork.BODYWORK_WINDOW_LEFT_REAR_PERCENT",
     "stateTolerance": 3,
     "gradual": true,
     "valueOffset": 100,
-    "inverted": true
+    "inverted": true,
+    "requiresReadbackElsewhere": true
   },
   {
     "id": "window.rearRight.position",
@@ -1227,8 +1440,10 @@
     "labelAr": "وضع النافذة الخلفية اليمنى",
     "labelRu": "Положение заднего правого окна",
     "labelPl": "Położenie tylnej prawej szyby",
+    "labelId": "Posisi jendela belakang kanan",
     "deviceType": 1001,
     "featureId": 1276219432,
+    "featureName": "Bodywork.BODYWORK_RR_WINDOW_TARGET_POSITION_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -1239,10 +1454,12 @@
       "unit": "%"
     },
     "stateFeatureId": 947912752,
+    "stateFeatureName": "Bodywork.BODYWORK_WINDOW_RIGHT_REAR_PERCENT",
     "stateTolerance": 3,
     "gradual": true,
     "valueOffset": 100,
-    "inverted": true
+    "inverted": true,
+    "requiresReadbackElsewhere": true
   },
   {
     "id": "seat.driver.massage",
@@ -1252,8 +1469,10 @@
     "labelAr": "تدليك مقعد السائق",
     "labelRu": "Массаж сиденья водителя",
     "labelPl": "Masaż fotela kierowcy",
+    "labelId": "Pijat jok pengemudi",
     "deviceType": 1023,
     "featureId": 1276190736,
+    "featureName": "Setting.SET_MAIN_DRIVING_SEAT_MASSAGE_WORK_INTENSUTY_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -1267,10 +1486,12 @@
       }
     },
     "stateFeatureId": 1335885876,
+    "stateFeatureName": "Setting.SET_FRONT_LEFT_SEAT_MASSAGE_LEVEL",
     "overrides": [
       {
         "whenValue": 0,
         "featureId": 1276190752,
+        "featureName": "Setting.SET_MAIN_DRIVER_SEAT_MASSAGE_WORKING_MODE_SET",
         "sendValue": 1
       }
     ]
@@ -1283,8 +1504,10 @@
     "labelAr": "تدليك مقعد الراكب",
     "labelRu": "Массаж сиденья пассажира",
     "labelPl": "Masaż fotela pasażera",
+    "labelId": "Pijat jok penumpang",
     "deviceType": 1023,
     "featureId": 1276190739,
+    "featureName": "Setting.SET_CO_DRIVING_SEAT_MASSAGE_WORK_INTENSUTY_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -1298,10 +1521,12 @@
       }
     },
     "stateFeatureId": 1335885884,
+    "stateFeatureName": "Setting.SET_FRONT_RIGHT_SEAT_MASSAGE_LEVEL",
     "overrides": [
       {
         "whenValue": 0,
         "featureId": 1276190756,
+        "featureName": "Setting.SET_CO_DRIVER_SEAT_MASSAGE_WORKING_MODE_SET",
         "sendValue": 1
       }
     ]
@@ -1314,8 +1539,10 @@
     "labelAr": "إضاءة المقصورة",
     "labelRu": "Освещение салона",
     "labelPl": "Oświetlenie kabiny",
+    "labelId": "Lampu kabin",
     "deviceType": 1023,
     "featureId": 1330643002,
+    "featureName": "Setting.SET_INSIDE_LIGHT_STATE_SET",
     "invocation": {
       "type": "genericFeatureSet"
     },
@@ -1326,7 +1553,8 @@
         "on": 2
       }
     },
-    "stateFeatureId": 1121976365
+    "stateFeatureId": 1121976365,
+    "stateFeatureName": "Setting.SET_INSIDE_LIGHT_STATE"
   },
   {
     "id": "ac.airSource",
@@ -1336,8 +1564,9 @@
     "labelAr": "مصدر الهواء",
     "labelRu": "Источник воздуха",
     "labelPl": "Źródło powietrza",
+    "labelId": "Sumber udara (sirkulasi)",
     "deviceType": 1000,
-    "featureId": 1077936148,
+    "featureId": 501219355,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1351,7 +1580,29 @@
         "outside": 0,
         "inside": 1
       }
-    }
+    },
+    "withoutAcService": {
+      "invocation": {
+        "type": "namedMethod",
+        "deviceClass": "ac",
+        "methodName": "setAcCycleMode",
+        "paramTypes": [
+          "int",
+          "int"
+        ],
+        "argsTemplate": [
+          1,
+          null
+        ]
+      },
+      "stateFeatureId": 1077936148,
+      "stateFeatureName": "Ac.AC_CYCLE_MODE",
+      "nativeFeatureId": 501219355,
+      "nativeFeatureName": "Ac.AC_CYCLE_MODE_SET"
+    },
+    "stateFeatureId": 1077936148,
+    "featureName": "Ac.AC_CYCLE_MODE_SET",
+    "stateFeatureName": "Ac.AC_CYCLE_MODE"
   },
   {
     "id": "ac.ventilation",
@@ -1361,8 +1612,9 @@
     "labelAr": "تهوية المكيف",
     "labelRu": "Вентиляция кондиционера",
     "labelPl": "Wentylacja klimatyzacji",
+    "labelId": "Ventilasi AC",
     "deviceType": 1000,
-    "featureId": 1314914314,
+    "featureId": 501219394,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1376,7 +1628,29 @@
         "on": 1,
         "off": 0
       }
-    }
+    },
+    "withoutAcService": {
+      "invocation": {
+        "type": "namedMethod",
+        "deviceClass": "ac",
+        "methodName": "setAcVentilationState",
+        "paramTypes": [
+          "int",
+          "int"
+        ],
+        "argsTemplate": [
+          1,
+          null
+        ]
+      },
+      "stateFeatureId": 1314914314,
+      "stateFeatureName": "Ac.AC_VENTILATION_STATE",
+      "nativeFeatureId": 501219394,
+      "nativeFeatureName": "Ac.AC_VENTILATION_STATE_SET"
+    },
+    "stateFeatureId": 1314914314,
+    "featureName": "Ac.AC_VENTILATION_STATE_SET",
+    "stateFeatureName": "Ac.AC_VENTILATION_STATE"
   },
   {
     "id": "ac.compressor",
@@ -1386,8 +1660,9 @@
     "labelAr": "تبريد المكيف",
     "labelRu": "Охлаждение кондиционера",
     "labelPl": "Chłodzenie klimatyzacji",
+    "labelId": "Pendinginan AC",
     "deviceType": 1000,
-    "featureId": 1077936137,
+    "featureId": 501219344,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1401,7 +1676,29 @@
         "on": 1,
         "off": 0
       }
-    }
+    },
+    "withoutAcService": {
+      "invocation": {
+        "type": "namedMethod",
+        "deviceClass": "ac",
+        "methodName": "setAcCompressorMode",
+        "paramTypes": [
+          "int",
+          "int"
+        ],
+        "argsTemplate": [
+          1,
+          null
+        ]
+      },
+      "stateFeatureId": 1077936137,
+      "stateFeatureName": "Ac.AC_COMPRESSOR_MODE",
+      "nativeFeatureId": 501219344,
+      "nativeFeatureName": "Ac.AC_COMPRESSOR_MODE_SET"
+    },
+    "stateFeatureId": 1077936137,
+    "featureName": "Ac.AC_COMPRESSOR_MODE_SET",
+    "stateFeatureName": "Ac.AC_COMPRESSOR_MODE"
   },
   {
     "id": "ac.auto",
@@ -1411,8 +1708,9 @@
     "labelAr": "الوضع التلقائي للمكيف",
     "labelRu": "Автоматический режим климата",
     "labelPl": "Tryb automatyczny klimatyzacji",
+    "labelId": "Mode otomatis AC",
     "deviceType": 1000,
-    "featureId": 1077936146,
+    "featureId": 501219352,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1425,7 +1723,29 @@
       "options": {
         "auto": 0
       }
-    }
+    },
+    "withoutAcService": {
+      "invocation": {
+        "type": "namedMethod",
+        "deviceClass": "ac",
+        "methodName": "setAcControlMode",
+        "paramTypes": [
+          "int",
+          "int"
+        ],
+        "argsTemplate": [
+          1,
+          null
+        ]
+      },
+      "stateFeatureId": 1077936146,
+      "stateFeatureName": "Ac.AC_CTRL_MODE",
+      "nativeFeatureId": 501219352,
+      "nativeFeatureName": "Ac.AC_CTRL_MODE_SET"
+    },
+    "stateFeatureId": 1077936146,
+    "featureName": "Ac.AC_CTRL_MODE_SET",
+    "stateFeatureName": "Ac.AC_CTRL_MODE"
   },
   {
     "id": "ac.frontDefrost",
@@ -1435,8 +1755,9 @@
     "labelAr": "إزالة الضباب عن الزجاج الأمامي",
     "labelRu": "Обогрев лобового стекла",
     "labelPl": "Odmrażanie szyby przedniej",
+    "labelId": "Defrost kaca depan",
     "deviceType": 1000,
-    "featureId": 1077936150,
+    "featureId": 501219362,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1450,7 +1771,31 @@
         "on": 1,
         "off": 0
       }
-    }
+    },
+    "withoutAcService": {
+      "invocation": {
+        "type": "namedMethod",
+        "deviceClass": "ac",
+        "methodName": "setAcDefrostState",
+        "paramTypes": [
+          "int",
+          "int",
+          "int"
+        ],
+        "argsTemplate": [
+          1,
+          1,
+          null
+        ]
+      },
+      "stateFeatureId": 1077936150,
+      "stateFeatureName": "Ac.AC_DEFROST_FRONT_STATE",
+      "nativeFeatureId": 501219362,
+      "nativeFeatureName": "Ac.AC_DEFROST_FRONT_STATE_SET"
+    },
+    "stateFeatureId": 1077936150,
+    "featureName": "Ac.AC_DEFROST_FRONT_STATE_SET",
+    "stateFeatureName": "Ac.AC_DEFROST_FRONT_STATE"
   },
   {
     "id": "ac.rearDefrost",
@@ -1460,8 +1805,9 @@
     "labelAr": "إزالة الضباب عن الزجاج الخلفي",
     "labelRu": "Обогрев заднего стекла",
     "labelPl": "Odmrażanie szyby tylnej",
+    "labelId": "Defrost kaca belakang",
     "deviceType": 1000,
-    "featureId": 1128267825,
+    "featureId": 501219357,
     "invocation": {
       "type": "acBinderProperty",
       "subServiceKey": "AC_AIRCONDITIONER_SERVICE",
@@ -1475,6 +1821,30 @@
         "on": 1,
         "off": 0
       }
-    }
+    },
+    "withoutAcService": {
+      "invocation": {
+        "type": "namedMethod",
+        "deviceClass": "ac",
+        "methodName": "setAcDefrostState",
+        "paramTypes": [
+          "int",
+          "int",
+          "int"
+        ],
+        "argsTemplate": [
+          1,
+          2,
+          null
+        ]
+      },
+      "stateFeatureId": 1128267825,
+      "stateFeatureName": "Ac.AC_DEFROST_REAR_STATE",
+      "nativeFeatureId": 501219357,
+      "nativeFeatureName": "Ac.AC_DEFROST_REAR_STATE_SET"
+    },
+    "stateFeatureId": 1128267825,
+    "featureName": "Ac.AC_DEFROST_REAR_STATE_SET",
+    "stateFeatureName": "Ac.AC_DEFROST_REAR_STATE"
   }
 ]

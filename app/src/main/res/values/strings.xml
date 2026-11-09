@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">BYD Assistant NG</string>
+    <string name="app_name" translatable="false">BYD Assistant NG (Song PLUS)</string>
     <string name="wheel_key_service_name">BYD Assistant NG steering-wheel button</string>
     <string name="wheel_key_service_description">Lets BYD Assistant NG start listening when you press the microphone button on the steering wheel. It only watches that one button; it does not read the screen or anything you type.</string>
 
@@ -105,6 +105,7 @@
     <string name="app_language_arabic">العربية</string>
     <string name="app_language_russian">Русский</string>
     <string name="app_language_polish">Polski</string>
+    <string name="app_language_indonesian">Bahasa Indonesia</string>
     <string name="assistant_language_title">Reply language</string>
     <string name="assistant_language_hint">The language the assistant answers in. Auto follows the language you speak.</string>
     <string name="language_auto">Auto</string>
@@ -112,6 +113,7 @@
     <string name="language_arabic">Arabic</string>
     <string name="language_russian">Russian</string>
     <string name="language_polish">Polish</string>
+    <string name="language_indonesian">Indonesian</string>
     <string name="dialect_title">Arabic dialect</string>
     <string name="dialect_hint">Which Arabic it speaks when it answers in Arabic. “Match me” follows how you talk. Takes effect on the next conversation.</string>
     <string name="dialect_match">Match me</string>
@@ -452,4 +454,63 @@
     <string name="voice_speaker_headrest_note">While you talk to the assistant, the car\'s headrest sound is set to Interactive and the voice plays on the car\'s navigation channel, so it comes from the driver\'s headrest only. The headrest sound goes back as it was afterwards. Music stays on the car\'s speakers. The volume is set under Volume below. Needs ADB debugging, like the car controls.</string>
     <string name="log_share_failed">Couldn\'t share the log.</string>
     <string name="log_showing_newest">Showing the newest %1$d of %2$d characters; the older lines are left out.</string>
+    <string name="action_save_to_downloads">Save to Downloads</string>
+    <string name="log_saved_to">Saved to %1$s</string>
+    <string name="log_save_failed">Couldn\'t save the log.</string>
+    <string name="log_preparing">Preparing the log…</string>
+    <string name="log_hide_private">Hide private info</string>
+    <string name="log_hide_private_on">What you said and asked for, places, song names, keys, e-mail addresses, phone numbers and network addresses are replaced here, in what you share and in what you save.</string>
+    <string name="log_hide_private_off">The whole log is shown. It includes what you said and asked for. Share it only with people you trust.</string>
+    <string name="language_french">French</string>
+    <string name="dialect_tunisian">Tunisian (Derja)</string>
+    <string name="banner_car_status">Reading the car status</string>
+    <string name="banner_navigation_read">Reading the route</string>
+    <string name="banner_location">Finding where the car is</string>
+    <string name="banner_drive_report">Looking at your drive</string>
+    <string name="location_title">Location for the weather</string>
+    <string name="location_desc">Lets the assistant know which town the car is in, for the weather and for places nearby. It only uses the position the car already has: nothing is tracked or stored.</string>
+    <string name="location_allow">Allow</string>
+    <string name="location_allowed">Allowed</string>
+    <string name="welcome_summary_title">Welcome summary</string>
+    <string name="welcome_summary_desc">When you get in: the battery, electric and fuel range, the temperature inside and outside, today\'s weather, and an offer to cool or warm the cabin when it needs it.</string>
+    <string name="group_driving">Driving</string>
+    <string name="drive_coach_title">Drive coach</string>
+    <string name="drive_coach_desc">While the car is on, the assistant follows speed, battery and range (in memory only), so you can ask how you drove over the last 15 or 30 minutes and how to use less energy.</string>
+    <string name="drive_tips_title">Spoken drive tips</string>
+    <string name="drive_tips_desc">Now and then, one short friendly tip while you drive when the drive clearly calls for it (smoother or steadier driving, electric in town), and a reminder to take a break after two hours. At most one every 25 minutes.</string>
+    <string name="banner_scene">Scene: %1$s</string>
+    <string name="quick_listening">Offline: say a car command</string>
+    <string name="quick_not_heard">Nothing heard</string>
+    <string name="quick_not_command">Offline, not a car command: %1$s</string>
+    <string name="quick_nothing_to_repeat">Nothing to repeat yet</string>
+    <!-- Song PLUS edition: names -->
+    <string name="names_title">Names</string>
+    <string name="setup_name_names">Names</string>
+    <string name="names_setup_body">Give your assistant a name, and tell it what you call your car and what to call you. All three are optional and can be changed later in Settings.</string>
+    <string name="names_assistant_label">Assistant\'s name</string>
+    <string name="names_assistant_example">e.g. Yasmine</string>
+    <string name="names_car_label">Your car\'s name</string>
+    <string name="names_car_example">e.g. the Song, Lbayda</string>
+    <string name="names_driver_label">Your name</string>
+    <string name="names_driver_example">e.g. Axel</string>
+    <string name="names_note">You still start the assistant with the steering-wheel button or a tap. It doesn\'t listen for its name all the time.</string>
+    <string name="names_row_title">Assistant and car names</string>
+    <string name="names_row_hint">How the assistant introduces itself, and what it calls the car and you</string>
+    <string name="names_unset">Not set</string>
+    <string name="names_later">Later</string>
+    <string name="ui_style_neon" translatable="false">Neon</string>
+    <string name="group_appearance">Appearance</string>
+    <string name="ui_style_title">Style</string>
+    <string name="ui_style_desc">Neon matches the remote dashboard: dark, with a glowing accent. Classic is the original calm look.</string>
+    <string name="ui_style_classic">Classic</string>
+    <string name="ui_accent_title">Accent colour</string>
+    <string name="ui_accent_cyan">Cyan</string>
+    <string name="ui_accent_purple">Purple</string>
+    <string name="ui_accent_green">Green</string>
+    <string name="ui_accent_amber">Amber</string>
+    <string name="ui_motion_title">Animations</string>
+    <string name="ui_motion_desc">The voice orb breathes, ripples while listening and pulses while speaking. Off: it stays still.</string>
+    <string name="ui_large_text_title">Larger text</string>
+    <string name="ui_large_text_desc">All text one step bigger, easier to read at a glance from the driver\'s seat</string>
+    <string name="home_hint_wheel">Tap the orb or press the voice button on the wheel</string>
 </resources>

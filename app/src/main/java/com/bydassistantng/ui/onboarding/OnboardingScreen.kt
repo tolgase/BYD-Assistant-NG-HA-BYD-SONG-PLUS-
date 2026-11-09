@@ -60,6 +60,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.bydassistantng.R
 import com.bydassistantng.ui.AiStudioKeyLink
+import com.bydassistantng.ui.NamesForm
 import com.bydassistantng.ui.AppAlertDialog
 import com.bydassistantng.ui.AppLanguageSelector
 import com.bydassistantng.ui.AssistantLanguageSelector
@@ -76,7 +77,7 @@ import com.bydassistantng.util.CarVoiceAssistant
 import com.bydassistantng.util.DilinkAutoStart
 
 /** The first-time setup, in the order it is done. */
-private enum class SetupStep { LANGUAGE, MICROPHONE, KEY, WHEEL, AUTOSTART, DONE }
+private enum class SetupStep { LANGUAGE, NAMES, MICROPHONE, KEY, WHEEL, AUTOSTART, DONE }
 
 /** Below this width the list of steps becomes a row of dots over the step. */
 private val SPLIT_FROM = 840.dp
@@ -94,6 +95,7 @@ fun OnboardingScreen(onFinished: () -> Unit, viewModel: OnboardingViewModel = hi
     val language by viewModel.language.collectAsState()
     val appLanguage by viewModel.appLanguage.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    val identity by viewModel.identity.collectAsState()
     var apiKey by remember { mutableStateOf("") }
 
     var micGranted by remember { mutableStateOf(isGranted(context, Manifest.permission.RECORD_AUDIO)) }
@@ -127,6 +129,7 @@ fun OnboardingScreen(onFinished: () -> Unit, viewModel: OnboardingViewModel = hi
     val steps = remember {
         buildList {
             add(SetupStep.LANGUAGE)
+            add(SetupStep.NAMES)
             add(SetupStep.MICROPHONE)
             add(SetupStep.KEY)
             add(SetupStep.WHEEL)
@@ -166,6 +169,7 @@ fun OnboardingScreen(onFinished: () -> Unit, viewModel: OnboardingViewModel = hi
     val stateOf: @Composable (SetupStep) -> String = { s ->
         when (s) {
             SetupStep.LANGUAGE -> stringResource(R.string.setup_state_language)
+            SetupStep.NAMES -> identity.cleaned().assistant.ifBlank { stringResource(R.string.setup_recommended) }
             SetupStep.MICROPHONE -> stringResource(if (micGranted) R.string.chip_allowed else R.string.setup_required)
             SetupStep.KEY -> stringResource(if (keyAdded) R.string.setup_state_added else R.string.setup_required)
             SetupStep.WHEEL -> stringResource(if (wheelSetup.enabled) R.string.setup_state_on else R.string.setup_recommended)
@@ -176,6 +180,7 @@ fun OnboardingScreen(onFinished: () -> Unit, viewModel: OnboardingViewModel = hi
     val doneOf: (SetupStep) -> Boolean = { s ->
         when (s) {
             SetupStep.LANGUAGE -> current > 0
+            SetupStep.NAMES -> identity.cleaned().assistant.isNotEmpty() || identity.cleaned().car.isNotEmpty()
             SetupStep.MICROPHONE -> micGranted
             SetupStep.KEY -> keyAdded
             SetupStep.WHEEL -> wheelSetup.enabled
@@ -235,6 +240,12 @@ fun OnboardingScreen(onFinished: () -> Unit, viewModel: OnboardingViewModel = hi
                                     }
                                 }
                                 row { Box(modifier = Modifier.padding(20.dp)) { AssistantLanguageSelector(selected = language, onSelect = { viewModel.setLanguage(it) }) } }
+                            }
+                        }
+                        SetupStep.NAMES -> {
+                            StepHeader(current + 1, steps.size, stringResource(R.string.names_title), required = false, body = stringResource(R.string.names_setup_body))
+                            SettingsSection("") {
+                                row { NamesForm(identity, { viewModel.setIdentity(it) }, modifier = Modifier.padding(20.dp)) }
                             }
                         }
                         SetupStep.MICROPHONE -> {
@@ -419,7 +430,7 @@ fun OnboardingScreen(onFinished: () -> Unit, viewModel: OnboardingViewModel = hi
                         TextButton(onClick = { index = current - 1 }) { Text(stringResource(R.string.setup_back), fontSize = 17.sp) }
                     }
                     Box(modifier = Modifier.weight(1f))
-                    if (step == SetupStep.WHEEL || step == SetupStep.AUTOSTART) {
+                    if (step == SetupStep.NAMES || step == SetupStep.WHEEL || step == SetupStep.AUTOSTART) {
                         TextButton(onClick = { index = current + 1 }) { Text(stringResource(R.string.setup_skip), fontSize = 17.sp) }
                     }
                     if (step == SetupStep.DONE) {
@@ -440,6 +451,7 @@ fun OnboardingScreen(onFinished: () -> Unit, viewModel: OnboardingViewModel = hi
 
 private fun SetupStep.nameRes(): Int = when (this) {
     SetupStep.LANGUAGE -> R.string.setup_name_language
+    SetupStep.NAMES -> R.string.setup_name_names
     SetupStep.MICROPHONE -> R.string.setup_name_microphone
     SetupStep.KEY -> R.string.setup_name_key
     SetupStep.WHEEL -> R.string.setup_name_wheel

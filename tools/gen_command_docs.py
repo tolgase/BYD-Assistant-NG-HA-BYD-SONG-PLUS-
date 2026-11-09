@@ -71,6 +71,11 @@ def values(c):
     return shown + (f" (signal = value {c['valueOffset']:+d})" if c.get("valueOffset") else "")
 
 
+def named(name):
+    """The car's own name for a number, `Group.NAME` as in its BYDAutoFeatureIds."""
+    return f" (`{name}`)" if name else ""
+
+
 def route(c):
     inv = c["invocation"]
     if inv["type"] == "binderCommand":
@@ -78,11 +83,26 @@ def route(c):
     if inv["type"] == "streamVolume":
         return f"Android audio stream {inv['stream']} (`AudioManager.setStreamVolume`)"
     if inv["type"] == "acBinderProperty":
-        return f"A/C service, property {inv['propertyId']}, area {inv['area']}"
+        text = f"A/C service, property {inv['propertyId']}, area {inv['area']}"
+        device = c.get("withoutAcService")
+        if device:
+            text += "; on a car without that service, " + method(device["invocation"])
+            if device.get("nativeFeatureName"):
+                text += f", or, where the car refuses the helper that class, a write of `{device['nativeFeatureName']}` to the car's service"
+        return text
     if inv["type"] == "namedMethod":
         return f"`{inv['deviceClass']}` method `{inv['methodName']}`"
     dev = DEVICES.get(c.get("deviceType"), str(c.get("deviceType")))
-    return f"{dev} device ({c.get('deviceType')}), control id {c['featureId']}"
+    return f"{dev} device ({c.get('deviceType')}), control id {c['featureId']}{named(c.get('featureName'))}"
+
+
+def method(inv):
+    """A typed call on a device class, with the arguments the registry fixes ('value' is the one the user chose)."""
+    args = ", ".join("value" if a is None else str(a) for a in inv["argsTemplate"])
+    call = f"`{inv['deviceClass']}` method `{inv['methodName']}({args})`"
+    if inv.get("offMethodName"):
+        call = f"`{inv['deviceClass']}` method `{inv['methodName']}({args})`, or `{inv['offMethodName']}({args})` for off"
+    return call
 
 
 def state(c):
@@ -92,19 +112,26 @@ def state(c):
     if inv["type"] == "streamVolume":
         return "the stream volume, read back"
     if inv["type"] == "acBinderProperty":
+        device = c.get("withoutAcService")
+        if device and device.get("stateFeatureId"):
+            return f"read back through the A/C service; on the device, state id {device['stateFeatureId']}{named(device.get('stateFeatureName'))}"
         return "read back through the A/C service"
     if c.get("stateFeatureId"):
-        return f"state id {c['stateFeatureId']}"
+        return f"state id {c['stateFeatureId']}{named(c.get('stateFeatureName'))}"
     return "—"
 
 
 def status(c):
     inv = c["invocation"]
     if c["id"] in NOTES:
-        return NOTES[c["id"]]
-    if inv["type"] in ("acBinderProperty", "binderCommand", "streamVolume") or c.get("stateFeatureId"):
-        return "Confirmed by read-back."
-    return "Accepted by the HAL; no read-back, so not independently verified."
+        text = NOTES[c["id"]]
+    elif inv["type"] in ("acBinderProperty", "binderCommand", "streamVolume") or c.get("stateFeatureId"):
+        text = "Confirmed by read-back."
+    else:
+        text = "Accepted by the HAL; no read-back, so not independently verified."
+    if c.get("withoutAcService"):
+        text += " The route for a car without the A/C service has run in a simulator only."
+    return text
 
 
 rows = json.loads(REGISTRY.read_text(encoding="utf-8"))
@@ -124,13 +151,31 @@ lines = [
     "setting needs no name, and an id without a dot is that family's `state`) and one `value`. The *Call* column",
     "shows the pair; the ids and the car's own ids are unchanged.",
     "",
+    "A number is followed by the name the car's own table (`BYDAutoFeatureIds`, `Group.NAME`) gives it. The name is what",
+    "stays the same from car to car; the number may not (see [platforms.md](platforms.md)). The numbers here are the ones",
+    "verified on a DiLink 5.1 car. On any car the app looks each name up in that car's own table when its vehicle helper",
+    "starts and uses the car's number; a command whose control the car does not name is not offered.",
+    "",
     "| Command | Call | Reaches the car through | Values | Read-back | Notes |",
     "| --- | --- | --- | --- | --- | --- |",
 ]
 for c in rows:
     lines.append(f"| `{c['id']}` — {c.get('label', c['displayName'])} | {call(c)} | {route(c)} | {values(c)} | {state(c)} | {status(c)} |")
+
 lines += [
     "",
+    "The four window percent controls (`window.<door>.position`) are not sent on a car that is not a recognised DiLink 5 unless",
+    "the car reports the window's position first.",
+    "",
+    "The A/C commands go through the car's `byd_airconditioning` service where it has one (as DiLink 5.1 does). A car without it",
+    "(the DiLink 5.0 log of a BYD Song Plus had none) reaches the same controls through the typed methods of the car's climate",
+    "device class instead, with the control source set to voice, or, where the car refuses the helper that class, by writing the",
+    "same control straight to the car's service ([hal-and-permissions.md](hal-and-permissions.md#the-native-route)); each is",
+    "confirmed by reading the state back as well. That route has been run in a simulator only; see",
+    "[ac-service.md](ac-service.md#a-car-without-the-service).",
+    "",
+]
+lines += [
     f"{len(rows)} commands. Domains that affect driving (engine, gearbox, motor, driver assistance, radar, security, power)",
     "are deliberately absent: the registry refuses to load an entry in one of them. See [safety](../../README.md#safety).",
     "",

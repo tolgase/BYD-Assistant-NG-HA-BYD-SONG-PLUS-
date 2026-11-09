@@ -19,7 +19,7 @@ class ReadCarToolTest {
     fun theDeclarationOffersTheFourReadingsAndRequiresOne() {
         val parameters = checkNotNull(ReadCarTool.declaration.parameters)
         assertEquals(listOf("what"), parameters.required)
-        assertEquals(listOf("tyres", "outside_temperature", "inside_temperature", "air_quality"), parameters.properties?.getValue("what")?.enum)
+        assertEquals(listOf("tyres", "outside_temperature", "inside_temperature", "air_quality", "status"), parameters.properties?.getValue("what")?.enum)
     }
 
     @Test

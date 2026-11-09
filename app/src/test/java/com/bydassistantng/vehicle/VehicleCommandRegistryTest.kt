@@ -114,8 +114,8 @@ class VehicleCommandRegistryTest {
             assertNotNull(c.stateFeatureId)
         }
         // Off is a MODE write (the native screen set mode 5->1 as the level went to 0); intensity 0 is ignored.
-        assertEquals(listOf(ValueOverride(0, 1276190752, 1)), command("seat.driver.massage").overrides)
-        assertEquals(listOf(ValueOverride(0, 1276190756, 1)), command("seat.passenger.massage").overrides)
+        assertEquals(listOf(ValueOverride(0, 1276190752, 1, "Setting.SET_MAIN_DRIVER_SEAT_MASSAGE_WORKING_MODE_SET")), command("seat.driver.massage").overrides)
+        assertEquals(listOf(ValueOverride(0, 1276190756, 1, "Setting.SET_CO_DRIVER_SEAT_MASSAGE_WORKING_MODE_SET")), command("seat.passenger.massage").overrides)
         // Rear massage isn't fitted on this car (config flag 0, state unreadable) — nothing may claim it.
         assertTrue(VehicleCommandRegistry.known.none { it.id.startsWith("seat.rear") && it.id.endsWith("massage") })
     }
@@ -150,37 +150,34 @@ class VehicleCommandRegistryTest {
         val fold = command("mirrors.autoFold")
         assertEquals(1312817178, fold.featureId)
         assertEquals(1081081884, fold.stateFeatureId)
-        assertEquals(mapOf("off" to 0, "on" to 1), (fold.parameter as VehicleParameter.FixedEnum).options)
+        // Song PLUS: off is written as 2, like the tilt-in-reverse switch next to it.
+        assertEquals(mapOf("off" to 2, "on" to 1), (fold.parameter as VehicleParameter.FixedEnum).options)
 
         val tilt = command("mirrors.tiltInReverse")
         assertEquals(1312817180, tilt.featureId)
         assertEquals(1228931096, tilt.stateFeatureId)
         // Off is written as 2 (writing 0 is not what the car's switch does) and the state then reads 0.
-        assertEquals(listOf(ValueOverride(0, 1312817180, 2)), tilt.overrides)
+        assertEquals(listOf(ValueOverride(0, 1312817180, 2, "Setting.SET_CAR_REAR_VIEW_SET")), tilt.overrides)
     }
 
     @Test
-    fun ambientColorAndBrightnessAreWholeCabinMethodsWithReadBack() {
+    fun ambientColorAndBrightnessAreWholeCabinControlsWithReadBack() {
+        // Song PLUS (DiLink 5.0): the colour and brightness are written straight to their Setting controls.
         val color = command("ambient.color")
-        val colorCall = color.invocation as VehicleInvocation.NamedMethod
-        assertEquals("setIALColor", colorCall.methodName)
-        // Area 3 is the whole cabin (front and back rows), source 1 is "voice".
-        assertEquals(listOf(3, null, 1), colorCall.argsTemplate)
-        assertEquals(1121976336, color.stateFeatureId)
+        assertEquals(VehicleInvocation.GenericFeatureSet, color.invocation)
         assertEquals(1023, color.deviceType)
+        assertEquals("Setting.SET_INTERIOR_ATMOSPHERE_LAMP_COLOR_SET", color.featureName)
+        assertEquals(1121976336, color.stateFeatureId)
         val colors = (color.parameter as VehicleParameter.FixedEnum).options
-        // The car's colour strip is 1..127; 0 is invalid and is refused by the car.
+        // The car's palette numbers are small positive codes; 0 is refused by the car.
         assertTrue(colors.values.all { it in 1..127 })
-        assertEquals(104, colors.getValue("red"))
-        assertEquals(16, colors.getValue("blue"))
+        assertEquals(26, colors.getValue("red"))
+        assertEquals(4, colors.getValue("blue"))
 
         val brightness = command("ambient.brightness")
-        val range = brightness.parameter as VehicleParameter.Range
-        // The method takes 0..5; the state reads 1..6, which is the level the user names.
-        assertEquals(VehicleParameter.Range(1, 6), range)
-        assertEquals(-1, brightness.valueOffset)
-        assertEquals(0, brightness.stateOffset)
-        assertEquals(listOf(3, null, 1), (brightness.invocation as VehicleInvocation.NamedMethod).argsTemplate)
+        assertEquals(VehicleInvocation.GenericFeatureSet, brightness.invocation)
+        assertEquals(VehicleParameter.Range(1, 10), brightness.parameter)
+        assertEquals("Setting.SET_IAL_FRONT_BRIGHTNESS", brightness.stateFeatureName)
     }
 
     @Test
@@ -278,6 +275,10 @@ class VehicleCommandRegistryTest {
             assertEquals(russian, c.labelFor("ru"))
             assertTrue("${c.id} needs a Polish label", !c.labelPl.isNullOrBlank())
             assertEquals(c.labelPl, c.labelFor("pl"))
+            assertTrue("${c.id} needs an Indonesian label", !c.labelId.isNullOrBlank())
+            assertEquals(c.labelId, c.labelFor("id"))
+            // Android reports Indonesian with its legacy code.
+            assertEquals(c.labelId, c.labelFor("in"))
             // Any other language gets the English name.
             assertEquals(c.label, c.labelFor("de"))
         }
@@ -285,7 +286,7 @@ class VehicleCommandRegistryTest {
 
     @Test
     fun aMissingTranslationFallsBackToTheEnglishDisplayName() {
-        val bare = command("audio.volume").copy(label = null, labelAr = null, labelRu = null, labelPl = null)
+        val bare = command("audio.volume").copy(label = null, labelAr = null, labelRu = null, labelPl = null, labelId = null)
         assertEquals(bare.displayName, bare.labelFor("ru"))
         assertEquals(bare.displayName, bare.labelFor("ar"))
     }

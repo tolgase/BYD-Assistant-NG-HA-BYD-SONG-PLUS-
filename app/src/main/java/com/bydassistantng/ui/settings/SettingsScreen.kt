@@ -325,9 +325,12 @@ private fun searchIndex(viewModel: SettingsViewModel, hasCarVoice: Boolean): Lis
     add(SettingsCategory.ASSISTANT, R.string.dialect_title)
     add(SettingsCategory.ASSISTANT, R.string.voice_title)
     add(SettingsCategory.ASSISTANT, R.string.web_search_title)
+    add(SettingsCategory.ASSISTANT, R.string.location_title)
     add(SettingsCategory.ASSISTANT, R.string.greeting_title)
+    add(SettingsCategory.ASSISTANT, R.string.drive_coach_title)
     // Its other settings are only shown while it is on.
     if (viewModel.greetingEnabled.collectAsState().value) {
+        add(SettingsCategory.ASSISTANT, R.string.welcome_summary_title)
         if (viewModel.headrestSpeakerPresent.collectAsState().value) add(SettingsCategory.ASSISTANT, R.string.greeting_speaker_title)
         add(SettingsCategory.ASSISTANT, R.string.greeting_test_title)
     }
