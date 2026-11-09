@@ -11,16 +11,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -35,6 +29,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import com.bydassistantng.ui.theme.LocalNeonLook
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bydassistantng.BuildConfig
 import com.bydassistantng.R
@@ -65,56 +70,97 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenUpdates: () -> Unit, viewModel:
         if (granted) viewModel.onMicTapped()
     }
 
+    val look = LocalNeonLook.current
+    val talk = {
+        if (context.hasMicPermission()) viewModel.onMicTapped()
+        else micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+    }
+
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             // fillMaxWidth, not fillMaxSize: a topBar slot that fills the whole height leaves the
             // content below it with zero height, which hid the mic button and status text entirely.
-            Box(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                IconButton(onClick = onOpenSettings, modifier = Modifier.align(Alignment.TopEnd)) {
-                    Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.home_settings))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.weight(1f).padding(start = 4.dp),
+                )
+                if (vehicleControlEnabled) {
+                    GlassPill(modifier = Modifier.padding(end = 10.dp)) {
+                        Icon(Icons.Filled.DirectionsCar, contentDescription = null, tint = look.accent, modifier = Modifier.size(18.dp))
+                        Text(
+                            stringResource(R.string.home_vehicle_armed),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 6.dp),
+                        )
+                    }
+                }
+                Surface(
+                    onClick = onOpenSettings,
+                    shape = RoundedCornerShape(14.dp),
+                    color = look.glass,
+                    border = if (look.neon) BorderStroke(1.dp, look.edge) else null,
+                    modifier = Modifier.size(48.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.home_settings), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
         },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            // A soft pool of the accent colour behind the orb, so the page is not flat black (Neon only).
+            if (look.neon) {
+                Box(
+                    modifier = Modifier.fillMaxSize().drawBehind {
+                        drawRect(
+                            Brush.radialGradient(
+                                listOf(look.accent.copy(alpha = 0.10f), look.accent2.copy(alpha = 0.04f), Color.Transparent),
+                                center = Offset(size.width / 2, size.height * 0.42f),
+                                radius = size.minDimension * 0.75f,
+                            ),
+                        )
+                    },
+                )
+            }
             Column(
-                modifier = Modifier.fillMaxSize().padding(24.dp),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                if (vehicleControlEnabled) {
-                    Icon(Icons.Filled.DirectionsCar, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Text(stringResource(R.string.home_vehicle_armed), style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(bottom = 16.dp))
-                }
-
+                VoiceOrb(
+                    mode = uiState.orbMode(),
+                    contentDescription = stringResource(R.string.home_talk),
+                    onClick = talk,
+                    size = 220.dp,
+                )
                 Text(
                     text = statusText(uiState),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = if (uiState is HomeUiState.Speaking) MaterialTheme.typography.titleMedium else MaterialTheme.typography.headlineSmall,
+                    fontWeight = if (uiState is HomeUiState.Speaking) FontWeight.Normal else FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
+                    maxLines = 6,
+                    overflow = TextOverflow.Ellipsis,
                     color = if (uiState is HomeUiState.Error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(top = 20.dp).widthIn(max = 560.dp),
                 )
-
-                Box(modifier = Modifier.padding(top = 40.dp), contentAlignment = Alignment.Center) {
-                    if (uiState is HomeUiState.Connecting || uiState is HomeUiState.Thinking || uiState is HomeUiState.Dispatching) {
-                        CircularProgressIndicator(modifier = Modifier.size(96.dp))
-                    }
-                    FloatingActionButton(
-                        onClick = {
-                            if (context.hasMicPermission()) viewModel.onMicTapped()
-                            else micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                        },
-                        shape = CircleShape,
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(80.dp),
-                    ) {
-                        Icon(
-                            // Stop while a conversation is going (whatever stage), mic when idle.
-                            imageVector = if (uiState is HomeUiState.Idle || uiState is HomeUiState.Error) Icons.Filled.Mic else Icons.Filled.Stop,
-                            contentDescription = stringResource(R.string.home_talk),
-                            modifier = Modifier.size(36.dp),
-                        )
-                    }
+                if (uiState is HomeUiState.Idle) {
+                    Text(
+                        stringResource(R.string.home_hint_wheel),
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp).widthIn(max = 480.dp),
+                    )
                 }
             }
             // Song PLUS edition: the installed version, always in sight, so what is on the car can be told at a glance
@@ -137,6 +183,20 @@ fun HomeScreen(onOpenSettings: () -> Unit, onOpenUpdates: () -> Unit, viewModel:
                 modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = 24.dp),
             )
         }
+    }
+}
+
+/** A small rounded label on glass: the "car control on" note in the top bar. */
+@Composable
+internal fun GlassPill(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
+    val look = LocalNeonLook.current
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = look.glass,
+        border = if (look.neon) BorderStroke(1.dp, look.edge) else null,
+        modifier = modifier,
+    ) {
+        Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, content = content)
     }
 }
 

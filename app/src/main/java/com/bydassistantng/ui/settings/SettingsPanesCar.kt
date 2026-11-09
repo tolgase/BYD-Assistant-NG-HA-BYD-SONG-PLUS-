@@ -399,7 +399,63 @@ internal fun AppPane(
         )
     }
 
+    val uiStyle by viewModel.uiStyle.collectAsState()
+    val uiAccent by viewModel.uiAccent.collectAsState()
+    val uiMotion by viewModel.uiMotion.collectAsState()
+    val uiLargeText by viewModel.uiLargeText.collectAsState()
+
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        // Appearance (1.7.0): Neon like the remote dashboard, or the original Classic look.
+        SettingsSection(stringResource(R.string.group_appearance)) {
+            row {
+                SettingRow(
+                    title = stringResource(R.string.ui_style_title),
+                    subtitle = stringResource(R.string.ui_style_desc),
+                    below = {
+                        SegmentedControl(
+                            options = listOf(stringResource(R.string.ui_style_neon), stringResource(R.string.ui_style_classic)),
+                            selected = if (uiStyle == com.bydassistantng.data.UiStyle.NEON) 0 else 1,
+                            onSelect = { viewModel.setUiStyle(if (it == 0) com.bydassistantng.data.UiStyle.NEON else com.bydassistantng.data.UiStyle.CLASSIC) },
+                        )
+                    },
+                )
+            }
+            if (uiStyle == com.bydassistantng.data.UiStyle.NEON) {
+                row(nested = true) {
+                    SettingRow(
+                        title = stringResource(R.string.ui_accent_title),
+                        subtitle = null,
+                        below = {
+                            val accents = com.bydassistantng.data.UiAccent.entries
+                            SegmentedControl(
+                                options = listOf(
+                                    stringResource(R.string.ui_accent_cyan), stringResource(R.string.ui_accent_purple),
+                                    stringResource(R.string.ui_accent_green), stringResource(R.string.ui_accent_amber),
+                                ),
+                                selected = accents.indexOf(uiAccent),
+                                onSelect = { viewModel.setUiAccent(accents[it]) },
+                            )
+                        },
+                    )
+                }
+            }
+            row {
+                SwitchSetting(
+                    title = stringResource(R.string.ui_motion_title),
+                    subtitle = stringResource(R.string.ui_motion_desc),
+                    checked = uiMotion,
+                    onCheckedChange = { viewModel.setUiMotion(it) },
+                )
+            }
+            row {
+                SwitchSetting(
+                    title = stringResource(R.string.ui_large_text_title),
+                    subtitle = stringResource(R.string.ui_large_text_desc),
+                    checked = uiLargeText,
+                    onCheckedChange = { viewModel.setUiLargeText(it) },
+                )
+            }
+        }
         SettingsSection(stringResource(R.string.group_language)) {
             row {
                 ChoiceSetting(

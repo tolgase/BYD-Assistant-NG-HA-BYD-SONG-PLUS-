@@ -98,7 +98,13 @@ fun SettingsSection(title: String, build: SettingsCardScope.() -> Unit) {
                 modifier = Modifier.padding(start = 8.dp, bottom = 8.dp),
             )
         }
-        Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
+        val look = com.bydassistantng.ui.theme.LocalNeonLook.current
+        // Neon: dark glass with a faint accent edge, as the remote dashboard's cards.
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            border = if (look.neon) androidx.compose.foundation.BorderStroke(1.dp, look.edge) else null,
+        ) {
             Column {
                 scope.rows.forEachIndexed { index, row ->
                     if (index > 0 && !row.nested) {
@@ -236,7 +242,7 @@ fun SettingSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Unit, enabled:
         onCheckedChange = onCheckedChange,
         enabled = enabled,
         colors = SwitchDefaults.colors(
-            checkedThumbColor = Color.White,
+            checkedThumbColor = if (com.bydassistantng.ui.theme.LocalNeonLook.current.neon) colors.onPrimary else Color.White,
             checkedTrackColor = colors.primary,
             checkedBorderColor = Color.Transparent,
             uncheckedThumbColor = colors.onSurfaceVariant,
@@ -305,6 +311,7 @@ fun StatusChip(text: String, kind: ChipKind = ChipKind.MUTED) {
 @Composable
 fun SegmentedControl(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
+    val neon = com.bydassistantng.ui.theme.LocalNeonLook.current.neon
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -320,7 +327,7 @@ fun SegmentedControl(options: List<String>, selected: Int, onSelect: (Int) -> Un
                     .weight(1f)
                     .heightIn(min = 52.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (on) colors.surfaceVariant else Color.Transparent)
+                    .background(if (on) (if (neon) colors.primary.copy(alpha = 0.16f) else colors.surfaceVariant) else Color.Transparent)
                     .selectable(selected = on, role = Role.RadioButton, onClick = { onSelect(index) })
                     .padding(horizontal = 8.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center,
@@ -329,7 +336,7 @@ fun SegmentedControl(options: List<String>, selected: Int, onSelect: (Int) -> Un
                     label,
                     fontSize = 15.sp,
                     fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal,
-                    color = if (on) colors.onSurface else colors.onSurfaceVariant,
+                    color = if (on) (if (neon) colors.primary else colors.onSurface) else colors.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
             }

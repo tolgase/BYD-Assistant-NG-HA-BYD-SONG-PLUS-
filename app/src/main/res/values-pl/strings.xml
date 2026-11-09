@@ -497,4 +497,18 @@
     <string name="names_row_hint">Jak asystent się przedstawia i jak nazywa samochód i ciebie</string>
     <string name="names_unset">Nie ustawiono</string>
     <string name="names_later">Później</string>
+    <string name="group_appearance">Wygląd</string>
+    <string name="ui_style_title">Styl</string>
+    <string name="ui_style_desc">Neon pasuje do panelu zdalnego: ciemny, ze świecącym akcentem. Klasyczny to pierwotny, spokojny wygląd.</string>
+    <string name="ui_style_classic">Klasyczny</string>
+    <string name="ui_accent_title">Kolor akcentu</string>
+    <string name="ui_accent_cyan">Cyjan</string>
+    <string name="ui_accent_purple">Fioletowy</string>
+    <string name="ui_accent_green">Zielony</string>
+    <string name="ui_accent_amber">Bursztynowy</string>
+    <string name="ui_motion_title">Animacje</string>
+    <string name="ui_motion_desc">Kula głosu oddycha, faluje podczas słuchania i pulsuje podczas mówienia. Wyłączone: stoi w miejscu.</string>
+    <string name="ui_large_text_title">Większy tekst</string>
+    <string name="ui_large_text_desc">Cały tekst o stopień większy, łatwiejszy do odczytania jednym spojrzeniem z fotela kierowcy</string>
+    <string name="home_hint_wheel">Dotknij kuli lub naciśnij przycisk głosu na kierownicy</string>
 </resources>

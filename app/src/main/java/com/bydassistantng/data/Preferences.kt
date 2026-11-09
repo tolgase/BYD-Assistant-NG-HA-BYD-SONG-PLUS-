@@ -23,6 +23,12 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/** The app's look: [NEON] matches the remote dashboard (dark, glowing accent); [CLASSIC] is the original calm style. */
+enum class UiStyle { NEON, CLASSIC }
+
+/** The accent colour of the Neon look, as ARGB. */
+enum class UiAccent(val argb: Long) { CYAN(0xFF00F0FF), PURPLE(0xFFB26BFF), GREEN(0xFF2BFF9A), AMBER(0xFFFFB02E) }
+
 enum class AssistantLanguage(val bcp47: String) { AUTO(""), ENGLISH("en"), ARABIC("ar"), RUSSIAN("ru"), POLISH("pl"), INDONESIAN("id"), FRENCH("fr") }
 
 /** Which Arabic the assistant should speak. [MATCH] says nothing, so the model follows the user. */
@@ -58,6 +64,10 @@ class PreferencesRepository @Inject constructor(@ApplicationContext context: Con
         val ARABIC_DIALECT = stringPreferencesKey("arabic_dialect")
         val ASSISTANT_VOICE = stringPreferencesKey("assistant_voice")
         val WEB_SEARCH_ENABLED = booleanPreferencesKey("web_search_enabled")
+        val UI_STYLE = stringPreferencesKey("ui_style")
+        val UI_ACCENT = stringPreferencesKey("ui_accent")
+        val UI_MOTION = booleanPreferencesKey("ui_motion")
+        val UI_LARGE_TEXT = booleanPreferencesKey("ui_large_text")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val AUTO_START_VISITED_AT = longPreferencesKey("auto_start_visited_at")
         val UPDATE_CHANNEL = stringPreferencesKey("update_channel")
@@ -140,6 +150,17 @@ class PreferencesRepository @Inject constructor(@ApplicationContext context: Con
      * controller retries without it. */
     // Song PLUS edition: on unless switched off — the driver asks about news, weather and prices too. A key that cannot
     // use Google Search is detected at the start of a conversation and the session simply runs without it.
+    // Song PLUS edition 1.7.0: how the app looks. Neon (the remote dashboard's look) or the original calm style,
+    // the accent colour, whether the voice orb moves, and larger text for reading at a glance while driving.
+    val uiStyle: Flow<UiStyle> = dataStore.data.map { p -> UiStyle.entries.find { it.name == p[Keys.UI_STYLE] } ?: UiStyle.NEON }
+    suspend fun setUiStyle(style: UiStyle) { dataStore.edit { it[Keys.UI_STYLE] = style.name } }
+    val uiAccent: Flow<UiAccent> = dataStore.data.map { p -> UiAccent.entries.find { it.name == p[Keys.UI_ACCENT] } ?: UiAccent.CYAN }
+    suspend fun setUiAccent(accent: UiAccent) { dataStore.edit { it[Keys.UI_ACCENT] = accent.name } }
+    val uiMotion: Flow<Boolean> = dataStore.data.map { it[Keys.UI_MOTION] ?: true }
+    suspend fun setUiMotion(enabled: Boolean) { dataStore.edit { it[Keys.UI_MOTION] = enabled } }
+    val uiLargeText: Flow<Boolean> = dataStore.data.map { it[Keys.UI_LARGE_TEXT] ?: false }
+    suspend fun setUiLargeText(enabled: Boolean) { dataStore.edit { it[Keys.UI_LARGE_TEXT] = enabled } }
+
     val webSearchEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.WEB_SEARCH_ENABLED] ?: true }
     suspend fun setWebSearchEnabled(enabled: Boolean) {
         dataStore.edit { it[Keys.WEB_SEARCH_ENABLED] = enabled }

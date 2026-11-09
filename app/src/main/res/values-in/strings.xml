@@ -501,4 +501,18 @@
     <string name="quick_not_heard">Tidak ada yang terdengar</string>
     <string name="quick_not_command">Luring, bukan perintah mobil: %1$s</string>
     <string name="quick_nothing_to_repeat">Belum ada yang bisa diulang</string>
+    <string name="group_appearance">Tampilan</string>
+    <string name="ui_style_title">Gaya</string>
+    <string name="ui_style_desc">Neon cocok dengan dasbor jarak jauh: gelap, dengan aksen bercahaya. Klasik adalah tampilan tenang aslinya.</string>
+    <string name="ui_style_classic">Klasik</string>
+    <string name="ui_accent_title">Warna aksen</string>
+    <string name="ui_accent_cyan">Sian</string>
+    <string name="ui_accent_purple">Ungu</string>
+    <string name="ui_accent_green">Hijau</string>
+    <string name="ui_accent_amber">Kuning</string>
+    <string name="ui_motion_title">Animasi</string>
+    <string name="ui_motion_desc">Bola suara bernapas, beriak saat mendengarkan, dan berdenyut saat berbicara. Mati: diam saja.</string>
+    <string name="ui_large_text_title">Teks lebih besar</string>
+    <string name="ui_large_text_desc">Semua teks satu tingkat lebih besar, lebih mudah dibaca sekilas dari kursi pengemudi</string>
+    <string name="home_hint_wheel">Ketuk bola atau tekan tombol suara di setir</string>
 </resources>

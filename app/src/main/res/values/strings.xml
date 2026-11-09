@@ -498,4 +498,19 @@
     <string name="names_row_hint">How the assistant introduces itself, and what it calls the car and you</string>
     <string name="names_unset">Not set</string>
     <string name="names_later">Later</string>
+    <string name="ui_style_neon" translatable="false">Neon</string>
+    <string name="group_appearance">Appearance</string>
+    <string name="ui_style_title">Style</string>
+    <string name="ui_style_desc">Neon matches the remote dashboard: dark, with a glowing accent. Classic is the original calm look.</string>
+    <string name="ui_style_classic">Classic</string>
+    <string name="ui_accent_title">Accent colour</string>
+    <string name="ui_accent_cyan">Cyan</string>
+    <string name="ui_accent_purple">Purple</string>
+    <string name="ui_accent_green">Green</string>
+    <string name="ui_accent_amber">Amber</string>
+    <string name="ui_motion_title">Animations</string>
+    <string name="ui_motion_desc">The voice orb breathes, ripples while listening and pulses while speaking. Off: it stays still.</string>
+    <string name="ui_large_text_title">Larger text</string>
+    <string name="ui_large_text_desc">All text one step bigger, easier to read at a glance from the driver\'s seat</string>
+    <string name="home_hint_wheel">Tap the orb or press the voice button on the wheel</string>
 </resources>

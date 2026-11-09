@@ -69,3 +69,13 @@ rebased onto it instead of carrying its own version of the same thing.
 - **Fixed:** `ac.compressor` named a feature this car does not have (`AC_COMPRESSOR_STATE`); it is `AC_COMPRESSOR_MODE`.
 - **Fixed a build break from the rebase:** taking upstream's `ReflectionVehicleController` whole dropped this
   edition's `CAR_STATUS` branch, so `read_car` had nowhere to go and the app would not compile. Restored.
+
+## 1.7.0: Neon look
+- **Neon style** (default), matching the remote dashboard: near-black blue page, dark glass cards with a faint accent
+  edge, one glowing accent colour. **Classic** (the original calm look) stays one tap away.
+- **Voice orb** on Home instead of the round button: breathes when idle, rings spread while listening, an arc runs
+  round it while thinking or acting on the car, it pulses while speaking, red when something failed.
+- **Settings → App → Appearance:** style (Neon / Classic), accent colour (cyan, purple, green, amber), animations
+  on/off (off: the orb stays still), larger text (everything one step bigger for reading from the driver's seat).
+- Home top bar: app name, "car control on" pill and a glass settings button; a hint under the orb says the wheel
+  button works too.

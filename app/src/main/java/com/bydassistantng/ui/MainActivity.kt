@@ -50,6 +50,9 @@ class MainActivity : ComponentActivity() {
     // Registered as a property so it exists before the activity reaches STARTED, as required.
     private val micPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
+    // The look (Neon or Classic, accent, motion, text size) is read here so every screen is drawn with it.
+    @javax.inject.Inject lateinit var preferences: com.bydassistantng.data.PreferencesRepository
+
     // The app language (and, for Arabic, right-to-left layout) is applied to the whole activity here.
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(AppLanguage.wrap(newBase))
@@ -67,7 +70,11 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            AppTheme {
+            val style by preferences.uiStyle.collectAsState(initial = com.bydassistantng.data.UiStyle.NEON)
+            val accent by preferences.uiAccent.collectAsState(initial = com.bydassistantng.data.UiAccent.CYAN)
+            val motion by preferences.uiMotion.collectAsState(initial = true)
+            val largeText by preferences.uiLargeText.collectAsState(initial = false)
+            AppTheme(style = style, accent = accent, motion = motion, largeText = largeText) {
                 Surface(modifier = Modifier.fillMaxSize().tapSound(), color = MaterialTheme.colorScheme.background) {
                     AppRoot(openUpdates = openUpdates)
                 }

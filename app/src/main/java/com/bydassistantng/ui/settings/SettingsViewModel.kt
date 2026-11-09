@@ -310,6 +310,20 @@ class SettingsViewModel @Inject constructor(
     val webSearchEnabled: StateFlow<Boolean> = preferencesRepository.webSearchEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
+    // Appearance (1.7.0)
+    val uiStyle: StateFlow<com.bydassistantng.data.UiStyle> = preferencesRepository.uiStyle
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.bydassistantng.data.UiStyle.NEON)
+    val uiAccent: StateFlow<com.bydassistantng.data.UiAccent> = preferencesRepository.uiAccent
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), com.bydassistantng.data.UiAccent.CYAN)
+    val uiMotion: StateFlow<Boolean> = preferencesRepository.uiMotion
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+    val uiLargeText: StateFlow<Boolean> = preferencesRepository.uiLargeText
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+    fun setUiStyle(style: com.bydassistantng.data.UiStyle) { viewModelScope.launch { preferencesRepository.setUiStyle(style) } }
+    fun setUiAccent(accent: com.bydassistantng.data.UiAccent) { viewModelScope.launch { preferencesRepository.setUiAccent(accent) } }
+    fun setUiMotion(enabled: Boolean) { viewModelScope.launch { preferencesRepository.setUiMotion(enabled) } }
+    fun setUiLargeText(enabled: Boolean) { viewModelScope.launch { preferencesRepository.setUiLargeText(enabled) } }
+
     fun setArabicDialect(dialect: ArabicDialect) {
         viewModelScope.launch { preferencesRepository.setArabicDialect(dialect) }
     }

@@ -497,4 +497,18 @@
     <string name="names_row_hint">Как ассистент представляется и как называет машину и вас</string>
     <string name="names_unset">Не задано</string>
     <string name="names_later">Позже</string>
+    <string name="group_appearance">Оформление</string>
+    <string name="ui_style_title">Стиль</string>
+    <string name="ui_style_desc">Неон — как у панели удалённого управления: тёмный, со светящимся акцентом. Классика — исходный спокойный вид.</string>
+    <string name="ui_style_classic">Классика</string>
+    <string name="ui_accent_title">Цвет акцента</string>
+    <string name="ui_accent_cyan">Бирюзовый</string>
+    <string name="ui_accent_purple">Фиолетовый</string>
+    <string name="ui_accent_green">Зелёный</string>
+    <string name="ui_accent_amber">Янтарный</string>
+    <string name="ui_motion_title">Анимация</string>
+    <string name="ui_motion_desc">Шар голоса дышит, расходится кругами при прослушивании и пульсирует во время речи. Выкл.: он неподвижен.</string>
+    <string name="ui_large_text_title">Крупный текст</string>
+    <string name="ui_large_text_desc">Весь текст на шаг крупнее, чтобы читать его с водительского места одним взглядом</string>
+    <string name="home_hint_wheel">Нажмите на шар или кнопку голоса на руле</string>
 </resources>

@@ -497,4 +497,18 @@
     <string name="names_row_hint">كيف يعرّف المساعد بنفسه، وكيف ينادي السيارة وينادونك</string>
     <string name="names_unset">غير محدد</string>
     <string name="names_later">لاحقًا</string>
+    <string name="group_appearance">المظهر</string>
+    <string name="ui_style_title">النمط</string>
+    <string name="ui_style_desc">النيون يطابق لوحة التحكم عن بُعد: داكن مع لون مضيء. الكلاسيكي هو المظهر الهادئ الأصلي.</string>
+    <string name="ui_style_classic">كلاسيكي</string>
+    <string name="ui_accent_title">لون التمييز</string>
+    <string name="ui_accent_cyan">سماوي</string>
+    <string name="ui_accent_purple">بنفسجي</string>
+    <string name="ui_accent_green">أخضر</string>
+    <string name="ui_accent_amber">كهرماني</string>
+    <string name="ui_motion_title">الحركة</string>
+    <string name="ui_motion_desc">الكرة الصوتية تتنفس وتتموج أثناء الاستماع وتنبض أثناء الكلام. عند الإيقاف تبقى ثابتة.</string>
+    <string name="ui_large_text_title">نص أكبر</string>
+    <string name="ui_large_text_desc">كل النصوص أكبر بدرجة، لتسهل قراءتها بلمحة من مقعد السائق</string>
+    <string name="home_hint_wheel">المس الكرة أو اضغط زر الصوت على المقود</string>
 </resources>
